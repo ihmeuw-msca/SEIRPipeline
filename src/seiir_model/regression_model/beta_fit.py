@@ -8,28 +8,27 @@ from slime.model import CovModelSet, MRModel
 
 class BetaRegressor:
 
-    def __init__(self, covmodel_set, mr_data):
+    def __init__(self, covmodel_set):
         self.covmodel_set = covmodel_set
-        self.mr_data = mr_data
         self.col_covs = [covmodel.col_cov for covmodel in covmodel_set.cov_models]
 
-    def set_fe(self, std):
+    def set_fe(self, mr_data, std):
         covmodel_set_fe = copy.deepcopy(self.covmodel_set)
         for covmodel in covmodel_set_fe.cov_models:
             covmodel.use_re = False 
 
-        mr_model_fe = MRModel(self.mr_data, covmodel_set_fe)
+        mr_model_fe = MRModel(mr_data, covmodel_set_fe)
         mr_model_fe.fit_model()
         fe = list(mr_model_fe.result.values())[0]
         for v, covmodel in zip(fe, self.covmodel_set.cov_models):
             covmodel.gprior = np.array([v, std])
 
-    def fit(self, two_stage=False, std=None):
+    def fit(self, mr_data, two_stage=False, std=None):
         if two_stage:
             assert std is not None
-            self.set_fe(std)
+            self.set_fe(mr_data, std)
         
-        self.mr_model = MRModel(self.mr_data, self.covmodel_set) 
+        self.mr_model = MRModel(mr_data, self.covmodel_set) 
         self.mr_model.fit_model()
         self.cov_coef = self.mr_model.result
 
@@ -37,8 +36,11 @@ class BetaRegressor:
         df = pd.DataFrame.from_dict(self.cov_coef, orient='index', columns=self.col_covs)
         return df.to_csv(path)
 
-    def load_coef(self, path):
-        cov_coef_dict = pd.read_csv(path).to_dict(orient='index')
+    def load_coef(self, df=None, path=None):
+        if df is not None:
+            cov_coef_dict = df.to_dict(orient='index')
+        else:
+            cov_coef_dict = pd.read_csv(path).to_dict(orient='index')
         self.cov_coef = {}
         for k, v in cov_coef_dict.items():
             coef = [v[cov] for cov in self.col_covs]
