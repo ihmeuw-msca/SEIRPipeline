@@ -1,4 +1,5 @@
 import pandas as pd
+from slime.core.data import MRData
 
 from slime.core.data import MRData
 

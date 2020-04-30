@@ -36,10 +36,7 @@ class ODERunner:
             solver = RK4(model.system, self.dt)
         else:
             raise ValueError("Unknown solver type")
-        solution = solver.solve(
-            t=times, init_cond=self.init_cond,
-            t_params=times, params=beta.reshape((1, -1))
-        )
+        solution = solver.solve(t=times, init_cond=self.init_cond, t_params=times, params=beta.reshape((1, -1)))
         result = pd.DataFrame(
             data=np.concatenate([solution, times.reshape((1, -1)), beta.reshape((1, -1))], axis=0).T,
             columns=["S", "E", "I1", "I2", "R", "t", "beta"]
