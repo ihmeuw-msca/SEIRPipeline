@@ -263,7 +263,7 @@ class SingleGroupODEProcess:
         })
         return params, components
 
-    def create_result(self):
+    def create_result_df(self):
         """Create result DataFrame.
         """
         params, components = self.predict(self.t)
@@ -278,3 +278,13 @@ class SingleGroupODEProcess:
             df_result[k] = v
 
         return df_result
+
+    def create_params_df(self):
+        """Create parameter DataFrame.
+        """
+        df_params = pd.DataFrame([self.alpha, self.sigma,
+                                  self.gamma1, self.gamma2],
+                                 index=['alpha', 'sigma', 'gamma1', 'gamma2'],
+                                 columns=['params'])
+
+        return df_params
