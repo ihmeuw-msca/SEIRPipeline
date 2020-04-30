@@ -31,13 +31,14 @@ class ModelRunner:
     @staticmethod
     def fit_beta_regression(covmodel_set, mr_data, path,
                             two_stage=False, std=None):
+        return self.ode_process.create_result_df()
+
+    def fit_beta_regression(self, covmodel_set, mr_data, path, two_stage=False,std=None):
         regressor = BetaRegressor(covmodel_set)
         regressor.fit(mr_data, two_stage, std)
         regressor.save_coef(path)
 
-    @staticmethod
-    def predict_beta_forward(covmodel_set, df_cov, df_cov_coef, col_t,
-                             col_group, col_scenario):
+    def predict_beta_forward(self, covmodel_set, df_cov, df_cov_coef, col_t, col_group, col_scenario):
         regressor = BetaRegressor(covmodel_set)
         regressor.load_coef(df_cov_coef)
         return predict(regressor, df_cov, col_t, col_group, col_scenario)
