@@ -5,6 +5,7 @@ from slime.core.data import MRData
 COL_T = 'days'
 COL_BETA = 'beta'
 COL_GROUP = 'loc_id'
+SEIIR_COMPARTMENTS = ['S', 'E', 'I1', '12', 'R']
 
 def convert_inputs_for_beta_model(data_cov, df_beta, covmodel_set):
     df_cov, col_t_cov, col_group_cov = data_cov
