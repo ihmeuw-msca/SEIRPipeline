@@ -130,8 +130,8 @@ class SingleGroupODEProcess:
         """Create spline fit object.
         """
         self.step_spline_model = SplineFit(
-            self.t,
-            np.log(np.maximum(1.0, self.obs)),
+            self.t[self.obs > 0.0],
+            np.log(self.obs[self.obs > 0.0]),
             self.spline_options
         )
 
