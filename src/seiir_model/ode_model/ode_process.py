@@ -4,6 +4,7 @@
     ~~~~~~~~~~~~
 """
 from dataclasses import dataclass
+from typing import Dict, Tuple
 import numpy as np
 import pandas as pd
 from datetime import datetime
@@ -292,19 +293,19 @@ class SingleGroupODEProcess:
 
 @dataclass
 class ODEProcessInput:
-    df_dict: dict
+    df_dict: Dict
     col_date: str
     col_cases: str
     col_pop: str
     col_loc_id: str
 
-    alpha: tuple
-    sigma: tuple
-    gamma1: tuple
-    gamma2: tuple
+    alpha: Tuple
+    sigma: Tuple
+    gamma1: Tuple
+    gamma2: Tuple
     solver_dt: float
-    spline_options: dict
-    peak_date_dict: dict
+    spline_options: Dict
+    peak_date_dict: Dict
     day_shift: int
 
 

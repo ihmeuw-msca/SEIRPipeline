@@ -1,7 +1,7 @@
 import pandas as pd
 
-from seiir_model.ode_process import ODEProcess
-from seiir_model.beta_fit import BetaRegressor
+from seiir_model.ode_model import ODEProcess
+from seiir_model.regression_model import BetaRegressor
 
 
 class ModelRunner:
@@ -15,8 +15,9 @@ class ModelRunner:
     def get_beta_ode_fit(self):
         return self.ode_process.create_result_df()
 
-    def fit_beta_regression(self, cov_model_set):
+    def fit_beta_regression(self, beta_regressor_input):
         pass
+
 
     def get_beta_regression_fit(self):
         pass
