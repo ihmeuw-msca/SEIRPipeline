@@ -3,12 +3,13 @@
     ODE Process
     ~~~~~~~~~~~~
 """
+from dataclasses import dataclass
 import numpy as np
 import pandas as pd
 from datetime import datetime
 from datetime import timedelta
 from odeopt.ode import RK4
-from odeopt.ode import ForwardEuler as LinearFirstOrder
+from odeopt.ode import LinearFirstOrder
 from odeopt.core.utils import linear_interpolate
 from .spline_fit import SplineFit
 
@@ -39,7 +40,7 @@ class SingleGroupODEProcess:
             col_cases (str): Column with new infectious data.
             col_pop (str): Column with population.
             col_loc_id (str): Column with location id.
-            peak_date (str | datetime): Column with the peaked date.
+            peak_date (str): Column with the peaked date.
             day_shift (int, optional): Days shift for the data sub-selection.
             alpha (arraylike): bounds for uniformly sampling alpha.
             sigma (arraylike): bounds for uniformly sampling sigma.
@@ -61,7 +62,7 @@ class SingleGroupODEProcess:
         self.col_loc_id = col_loc_id
 
         # subset the data
-        self.peak_date = peak_date
+        self.peak_date = np.datetime64(peak_date)
         self.day_shift = day_shift
         df.sort_values(self.col_date, inplace=True)
         df[col_date] = pd.to_datetime(df[col_date])
@@ -278,6 +279,102 @@ class SingleGroupODEProcess:
             df_result[k] = v
 
         return df_result
+
+    def create_params_df(self):
+        """Create parameter DataFrame.
+        """
+        df_params = pd.DataFrame([self.alpha, self.sigma,
+                                  self.gamma1, self.gamma2],
+                                 index=['alpha', 'sigma', 'gamma1', 'gamma2'],
+                                 columns=['params'])
+
+        return df_params
+
+@dataclass
+class ODEProcessInput:
+    df_dict: dict
+    col_date: str
+    col_cases: str
+    col_pop: str
+    col_loc_id: str
+
+    alpha: tuple
+    sigma: tuple
+    gamma1: tuple
+    gamma2: tuple
+    solver_dt: float
+    spline_options: dict
+    peak_date_dict: dict
+    day_shift: int
+
+
+class ODEProcess:
+    """ODE Process for multiple group.
+    """
+    def __init__(self, input):
+        """Constructor of ODEProcess.
+
+        Args:
+            input: ODEProcessInput
+        """
+        self.df_dict = input.df_dict
+        self.col_date = input.col_date
+        self.col_cases = input.col_cases
+        self.col_pop = input.col_pop
+        self.col_loc_id = input.col_loc_id
+
+        self.alpha = input.alpha
+        self.sigma = input.sigma
+        self.gamma1 = input.gamma1
+        self.gamma2 = input.gamma2
+        self.solver_dt = input.solver_dt
+        self.spline_options = input.spline_options
+        self.peak_date_dict = input.peak_date_dict
+        self.day_shift = input.day_shift
+
+        # create the location id
+        self.loc_ids = np.sort(list(self.df_dict.keys()))
+
+        # sampling the parameters here
+        self.alpha = np.random.uniform(*self.alpha)
+        self.sigma = np.random.uniform(*self.sigma)
+        self.gamma1 = np.random.uniform(*self.gamma1)
+        self.gamma2 = np.random.uniform(*self.gamma2)
+
+        # create model for each location
+        self.models = {
+            loc_id: SingleGroupODEProcess(
+                self.df_dict[loc_id],
+                self.col_date,
+                self.col_cases,
+                self.col_pop,
+                self.col_loc_id,
+                self.peak_date_dict[loc_id],
+                day_shift=self.day_shift,
+                alpha=(self.alpha,)*2,
+                sigma=(self.sigma,)*2,
+                gamma1=(self.gamma1,)*2,
+                gamma2=(self.gamma2,)*2,
+                solver_class=RK4,
+                solver_dt=self.solver_dt,
+                spline_options=self.spline_options
+            )
+            for loc_id in self.loc_ids
+        }
+
+    def process(self):
+        """Process all models.
+        """
+        for loc_id, model in self.models.items():
+            model.process()
+
+    def create_result_df(self):
+        """Create result DataFrame.
+        """
+        return pd.concat([
+            model.create_result_df()
+            for loc_id, model in self.models.items()
+        ])
 
     def create_params_df(self):
         """Create parameter DataFrame.
