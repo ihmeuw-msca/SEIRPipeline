@@ -36,8 +36,11 @@ class BetaRegressor:
         df = pd.DataFrame.from_dict(self.cov_coef, orient='index', columns=self.col_covs)
         return df.to_csv(path)
 
-    def load_coef(self, path):
-        cov_coef_dict = pd.read_csv(path).to_dict(orient='index')
+    def load_coef(self, df=None, path=None):
+        if df is not None:
+            cov_coef_dict = df.to_dict(orient='index')
+        else:
+            cov_coef_dict = pd.read_csv(path).to_dict(orient='index')
         self.cov_coef = {}
         for k, v in cov_coef_dict.items():
             coef = [v[cov] for cov in self.col_covs]
