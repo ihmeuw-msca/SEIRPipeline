@@ -40,7 +40,7 @@ class SingleGroupODEProcess:
             col_cases (str): Column with new infectious data.
             col_pop (str): Column with population.
             col_loc_id (str): Column with location id.
-            peak_date (str): Column with the peaked date.
+            peak_date (str | None): Column with the peaked date.
             day_shift (int, optional): Days shift for the data sub-selection.
             alpha (arraylike): bounds for uniformly sampling alpha.
             sigma (arraylike): bounds for uniformly sampling sigma.
@@ -62,15 +62,23 @@ class SingleGroupODEProcess:
         self.col_loc_id = col_loc_id
 
         # subset the data
-        self.peak_date = np.datetime64(peak_date)
+        if peak_date is not None:
+            self.peak_date = np.datetime64(peak_date)
+        else:
+            self.peak_date = None
         self.day_shift = day_shift
         df.sort_values(self.col_date, inplace=True)
         df[col_date] = pd.to_datetime(df[col_date])
         x = X
         y = Y + self.day_shift
         self.today = np.datetime64(datetime.today())
-        idx = df[col_date] < max(self.today + np.timedelta64(x - y),
-                                 self.peak_date + np.timedelta64((x - 4) - y))
+        if self.peak_date is not None:
+            idx = df[col_date] < max(
+                self.today + np.timedelta64(x - y),
+                self.peak_date + np.timedelta64((x - 4) - y)
+            )
+        else:
+            idx = df[col_date] < self.today + np.timedelta64(x - y)
         idx = idx & df[col_cases] > 0.0
         self.df = df[idx].iloc[1:].copy()
 
@@ -350,7 +358,8 @@ class ODEProcess:
                 self.col_cases,
                 self.col_pop,
                 self.col_loc_id,
-                self.peak_date_dict[loc_id],
+                self.peak_date_dict[loc_id]
+                if loc_id in self.peak_date_dict else None,
                 day_shift=self.day_shift,
                 alpha=(self.alpha,)*2,
                 sigma=(self.sigma,)*2,
