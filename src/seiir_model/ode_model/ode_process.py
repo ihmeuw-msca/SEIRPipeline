@@ -68,24 +68,24 @@ class SingleGroupODEProcess:
             self.peak_date = None
         self.day_shift = day_shift
         df.sort_values(self.col_date, inplace=True)
-        df[col_date] = pd.to_datetime(df[col_date])
+        date = pd.to_datetime(df[col_date])
         x = X
         y = Y + self.day_shift
         self.today = np.datetime64(datetime.today())
         if self.peak_date is not None:
-            idx = df[col_date] < max(
+            idx = date < max(
                 self.today + np.timedelta64(x - y),
                 self.peak_date + np.timedelta64((x - 4) - y)
             )
         else:
-            idx = df[col_date] < self.today + np.timedelta64(x - y)
+            idx = date < self.today + np.timedelta64(x - y)
         idx = idx & df[col_cases] > 0.0
         self.df = df[idx].iloc[1:].copy()
+        date = date[idx][1:]
 
         # compute days
         self.col_days = 'days'
-        self.df[self.col_days] = (self.df[self.col_date] -
-                                  self.df[self.col_date].min()).dt.days.values
+        self.df[self.col_days] = (date - date.min()).dt.days.values
 
         # parse input
         self.date = self.df[self.col_date]
