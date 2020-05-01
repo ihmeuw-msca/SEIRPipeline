@@ -40,7 +40,7 @@ class BetaRegressor:
         if df is not None:
             cov_coef_dict = df.to_dict(orient='index')
         else:
-            cov_coef_dict = pd.read_csv(path).to_dict(orient='index')
+            cov_coef_dict = pd.read_csv(path, index_col=0).to_dict(orient='index')
         self.cov_coef = {}
         for k, v in cov_coef_dict.items():
             coef = [v[cov] for cov in self.col_covs]
@@ -54,8 +54,8 @@ class BetaRegressor:
             raise RuntimeError('Group Not Found.')
 
 
-def predict(regressor, df_cov, col_t, col_group, col_scenario):
-    df = df_cov.sort_values(by=[col_group, col_scenario, col_t])
+def predict(regressor, df_cov, col_t, col_group):
+    df = df_cov.sort_values(by=[col_group, col_t])
     groups = df[col_group].unique()
     col_covs = regressor.col_covs
 
@@ -63,14 +63,12 @@ def predict(regressor, df_cov, col_t, col_group, col_scenario):
     
     for group in groups:
         df_one_group = df[df[col_group] == group]
-        scenarios = df_one_group[col_scenario].unique()
-        for sce in scenarios:
-            df_one_sce = df_one_group[df_one_group[col_scenario] == sce][col_covs]
-            cov = df_one_sce[col_covs].to_numpy()
-            betas = regressor.predict(cov, group)
-            beta_pred.append(betas)
+        cov = df_one_group[col_covs].to_numpy()
+        betas = regressor.predict(cov, group)
+        beta_pred.append(betas)
+    
     beta_pred = np.concatenate(beta_pred)
-    df['beta'] = beta_pred
+    df['log_beta_pred'] = beta_pred
 
     return df
 
