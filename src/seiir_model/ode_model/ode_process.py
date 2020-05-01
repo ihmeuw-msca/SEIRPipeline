@@ -389,9 +389,9 @@ class ODEProcess:
     def create_params_df(self):
         """Create parameter DataFrame.
         """
-        df_params = pd.DataFrame([self.alpha, self.sigma,
-                                  self.gamma1, self.gamma2],
-                                 index=['alpha', 'sigma', 'gamma1', 'gamma2'],
-                                 columns=['params'])
+        df_params = pd.DataFrame({
+            'params': ['alpha', 'sigma', 'gamma1', 'gamma2'],
+            'values': [self.alpha, self.sigma, self.gamma1, self.gamma2]
+        })
 
         return df_params
