@@ -65,6 +65,11 @@ class ModelRunner:
             betas (np.array): array with betas to predict for
             dt (float): Optional, step of the solver. I left it sticking outside
                 in case it works slow, so you can decrease it from the IHME pipeline.
+
+        Returns:
+            result (DataFrame):  a dataframe with columns ["S", "E", "I1", "I2", "R", "t", "beta"]
+            where t and beta are times and beta which were provided, and others are solution
+            of the ODE
         """
         forecaster = ODERunner(model_specs, init_cond, dt=dt)
         return forecaster.get_solution(times, betas)
