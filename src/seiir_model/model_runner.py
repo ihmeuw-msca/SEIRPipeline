@@ -13,20 +13,34 @@ class ModelRunner:
         self.ode_model = ODEProcess(ode_process_input)
         self.ode_model.process()
 
-    def get_beta_ode_fit(self):
-        return self.ode_model.create_result_df()
+    def get_beta_ode_fit(self, path=None):
+        if self.ode_model is None:
+            assert path is not None, 'Must fit_beta_ode or provide the path ' \
+                                     'to the fit result.'
+            return pd.read_csv(path)
+        else:
+            return self.ode_model.create_result_df()
 
-    def save_beta_ode_fit(self, fit_file, params_file):
+    def get_beta_ode_params(self, path=None):
+        if self.ode_model is None:
+            assert path is not None, 'Must fit_beta_ode or provide the path ' \
+                                     'to the fit parameters.'
+            return pd.read_csv(path)
+        else:
+            return self.ode_model.create_params_df()
+
+    def save_beta_ode_result(self, fit_file, params_file):
         """Save result from beta ode fit.
 
         Args:
             fit_file (str): fit file path to save to
             params_file (str): params file to save to
         """
+        assert self.ode_model is not None, 'Must fit_beta_ode first.'
         # save ode fit
-        self.ode_model.create_result_df().to_csv(fit_file, index=False)
+        self.get_beta_ode_fit().to_csv(fit_file, index=False)
         # save other parameters
-        self.ode_model.create_params_df().to_csv(params_file, index=False)
+        self.get_beta_ode_params().to_csv(params_file, index=False)
 
     def fit_beta_regression(self, covmodel_set, mr_data, path, two_stage=False,std=None):
         regressor = BetaRegressor(covmodel_set)

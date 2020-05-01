@@ -236,6 +236,9 @@ class SingleGroupODEProcess:
                                         self.gamma1*I1[None, :])[0]
 
         # fit S
+        self.init_cond.update({
+            'S': self.N - self.init_cond['E'] - self.init_cond['I1']
+        })
         self.step_ode_sys.update_given_params(c=0.0)
         S = self.step_ode_sys.simulate(self.t_params,
                                        np.array([self.init_cond['S']]),
@@ -389,9 +392,9 @@ class ODEProcess:
     def create_params_df(self):
         """Create parameter DataFrame.
         """
-        df_params = pd.DataFrame([self.alpha, self.sigma,
-                                  self.gamma1, self.gamma2],
-                                 index=['alpha', 'sigma', 'gamma1', 'gamma2'],
-                                 columns=['params'])
+        df_params = pd.DataFrame({
+            'params': ['alpha', 'sigma', 'gamma1', 'gamma2'],
+            'values': [self.alpha, self.sigma, self.gamma1, self.gamma2]
+        })
 
         return df_params
