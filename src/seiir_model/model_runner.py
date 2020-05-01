@@ -38,10 +38,10 @@ class ModelRunner:
         regressor.fit(mr_data, two_stage, std)
         regressor.save_coef(path)
 
-    def predict_beta_forward(self, covmodel_set, df_cov, df_cov_coef, col_t, col_group, col_scenario):
+    def predict_beta_forward(self, covmodel_set, df_cov, df_cov_coef, col_t, col_group):
         regressor = BetaRegressor(covmodel_set)
-        regressor.load_coef(df_cov_coef)
-        return predict(regressor, df_cov, col_t, col_group, col_scenario)
+        regressor.load_coef(df=df_cov_coef)
+        return predict(regressor, df_cov, col_t, col_group)
 
     @staticmethod
     def forecast(df, col_t, col_beta, model_specs, init_cond, dt=0.1):
