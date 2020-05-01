@@ -1,8 +1,8 @@
 import pandas as pd
 
 from seiir_model.ode_model import ODEProcess
-from seiir_model.regression_model import BetaRegressor, predict
-
+from seiir_model.regression_model.beta_fit import BetaRegressor, predict
+from seiir_model.ode_forecasting import SiierdModelSpecs, ODERunner
 
 class ModelRunner:
     def __init__(self):
@@ -42,8 +42,11 @@ class ModelRunner:
         regressor.load_coef(df_cov_coef)
         return predict(regressor, df_cov, col_t, col_group, col_scenario)
 
-    def forecast(self):
-        pass
+    def forecast(self, df, col_t, col_beta, model_specs, init_cond, dt=0.1):
+        times = df[col_t].to_numpy()
+        beta = df[col_beta].to_numpy()
+        forecaster = ODERunner(model_specs, init_cond, dt=dt)
+        return forecaster.get_solution(times, beta)
 
     def run_ode(self):
         pass
