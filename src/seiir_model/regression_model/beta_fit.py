@@ -54,7 +54,7 @@ class BetaRegressor:
             raise RuntimeError('Group Not Found.')
 
 
-def predict(regressor, df_cov, col_t, col_group):
+def predict(regressor, df_cov, col_t, col_group, col_beta='beta_pred'):
     df = df_cov.sort_values(by=[col_group, col_t])
     groups = df[col_group].unique()
     col_covs = regressor.col_covs
@@ -63,12 +63,15 @@ def predict(regressor, df_cov, col_t, col_group):
     
     for group in groups:
         df_one_group = df[df[col_group] == group]
-        cov = df_one_group[col_covs].to_numpy()
-        betas = regressor.predict(cov, group)
-        beta_pred.append(betas)
+        if group in regressor.cov_coef:
+            cov = df_one_group[col_covs].to_numpy()
+            betas = regressor.predict(cov, group)
+            beta_pred.append(betas)
+        else:
+            beta_pred.append([np.nan] * df_one_group.shape[0])
     
     beta_pred = np.concatenate(beta_pred)
-    df['log_beta_pred'] = beta_pred
+    df[col_beta] = beta_pred
 
     return df
 
