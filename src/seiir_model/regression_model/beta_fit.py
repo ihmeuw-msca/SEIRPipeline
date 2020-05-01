@@ -33,14 +33,17 @@ class BetaRegressor:
         self.cov_coef = self.mr_model.result
 
     def save_coef(self, path):
-        df = pd.DataFrame.from_dict(self.cov_coef, orient='index', columns=self.col_covs)
+        df = pd.DataFrame.from_dict(self.cov_coef, orient='index')
+        df.reset_index(inplace=True)
+        df.columns = ['group_id'] + self.col_covs
         return df.to_csv(path)
 
     def load_coef(self, df=None, path=None):
-        if df is not None:
-            cov_coef_dict = df.to_dict(orient='index')
-        else:
-            cov_coef_dict = pd.read_csv(path, index_col=0).to_dict(orient='index')
+        if df is None:
+            assert path is not None
+            df = pd.read_csv(path)
+        assert 'group_id' in df
+        cov_coef_dict = df.set_index('group_id').to_dict(orient='index')
         self.cov_coef = {}
         for k, v in cov_coef_dict.items():
             coef = [v[cov] for cov in self.col_covs]
