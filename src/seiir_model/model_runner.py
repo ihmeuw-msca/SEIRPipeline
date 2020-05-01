@@ -39,8 +39,32 @@ class ModelRunner:
         return predict(regressor, df_cov, col_t, col_group)
 
     @staticmethod
-    def forecast(df, col_t, col_beta, model_specs, init_cond, dt=0.1):
-        times = df[col_t].to_numpy()
-        beta = df[col_beta].to_numpy()
+    def forecast(model_specs, init_cond, times, betas,  dt=0.1):
+        """
+        Solves ode for given time and beta
+
+        Arguments:
+            model_specs (SiierdModelSpecs): specification for the model. See
+                seiir_model.ode_forecasting.SiierdModelSpecs
+                for more details.
+                example:
+                    model_specs = SiierdModelSpecs(
+                        alpha=0.9,
+                        sigma=1.0,
+                        gamma1=0.3,
+                        gamma2=0.4,
+                        N=100,  # <- total population size
+                    )
+
+            init_cond (np.array): vector with five numbers for the initial conditions
+                The order should be exactly this: [S E I1 I2 R].
+                example:
+                    init_cond = [96, 0, 2, 2, 0]
+
+            times (np.array): array with times to predict for
+            betas (np.array): array with betas to predict for
+            dt (float): Optional, step of the solver. I left it sticking outside
+                in case it works slow, so you can decrease it from the IHME pipeline.
+        """
         forecaster = ODERunner(model_specs, init_cond, dt=dt)
-        return forecaster.get_solution(times, beta)
+        return forecaster.get_solution(times, betas)
