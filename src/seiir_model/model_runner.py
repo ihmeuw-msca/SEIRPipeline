@@ -1,6 +1,6 @@
 import pandas as pd
 
-from seiir_model.ode_model.ode_process import ODEProcess
+from seiir_model.ode_model import ODEProcess
 from seiir_model.regression_model.beta_fit import BetaRegressor, predict
 from seiir_model.ode_forecasting import ODERunner
 
