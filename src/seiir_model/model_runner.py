@@ -6,21 +6,38 @@ from seiir_model.regression_model import BetaRegressor, predict
 
 class ModelRunner:
     def __init__(self):
-        self.ode_process = None
+        self.ode_model = None
 
     def fit_beta_ode(self, ode_process_input):
-        self.ode_process = ODEProcess(ode_process_input)
-        self.ode_process.process()
+        self.ode_model = ODEProcess(ode_process_input)
+        self.ode_model.process()
 
     def get_beta_ode_fit(self):
-        return self.ode_process.create_result_df()
+        return self.ode_model.create_result_df()
 
-    def fit_beta_regression(self, covmodel_set, mr_data, path, two_stage=False,std=None):
+    def save_beta_ode_fit(self, dir, fit_filename, params_filename):
+        """Save result from beta ode fit.
+
+        Args:
+            dir (str): Saving directory.
+        """
+        # save ode fit
+        self.ode_model.create_result_df().to_csv('/'.join([
+            dir, fit_filename,
+        ]), index=False)
+        # save other parameters
+        self.ode_model.create_params_df().to_csv('/'.join([
+            dir, params_filename,
+        ]), index=False)
+
+    def fit_beta_regression(self, covmodel_set, mr_data, path,
+                            two_stage=False, std=None):
         regressor = BetaRegressor(covmodel_set)
         regressor.fit(mr_data, two_stage, std)
         regressor.save_coef(path)
 
-    def predict_beta_forward(self, covmodel_set, df_cov, df_cov_coef, col_t, col_group, col_scenario):
+    def predict_beta_forward(self, covmodel_set, df_cov, df_cov_coef, col_t,
+                             col_group, col_scenario):
         regressor = BetaRegressor(covmodel_set)
         regressor.load_coef(df_cov_coef)
         return predict(regressor, df_cov, col_t, col_group, col_scenario)

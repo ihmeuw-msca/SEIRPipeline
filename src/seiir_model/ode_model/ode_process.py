@@ -8,7 +8,6 @@ from typing import Dict, Tuple
 import numpy as np
 import pandas as pd
 from datetime import datetime
-from datetime import timedelta
 from odeopt.ode import RK4
 from odeopt.ode import LinearFirstOrder
 from odeopt.core.utils import linear_interpolate
@@ -69,8 +68,9 @@ class SingleGroupODEProcess:
         df[col_date] = pd.to_datetime(df[col_date])
         x = X
         y = Y + self.day_shift
-        idx = df[col_date] < max(datetime.today() + timedelta(x - y),
-                                 peak_date + np.timedelta64((x - 4) - y))
+        self.today = np.datetime64(datetime.today())
+        idx = df[col_date] < max(self.today + np.timedelta64(x - y),
+                                 self.peak_date + np.timedelta64((x - 4) - y))
         idx = idx & df[col_cases] > 0.0
         self.df = df[idx].iloc[1:].copy()
 
