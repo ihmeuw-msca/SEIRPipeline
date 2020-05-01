@@ -236,6 +236,9 @@ class SingleGroupODEProcess:
                                         self.gamma1*I1[None, :])[0]
 
         # fit S
+        self.init_cond.update({
+            'S': self.N - self.init_cond['E'] - self.init_cond['I1']
+        })
         self.step_ode_sys.update_given_params(c=0.0)
         S = self.step_ode_sys.simulate(self.t_params,
                                        np.array([self.init_cond['S']]),
