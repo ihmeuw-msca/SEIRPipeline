@@ -28,11 +28,6 @@ class ModelRunner:
         # save other parameters
         self.ode_model.create_params_df().to_csv(params_file, index=False)
 
-    @staticmethod
-    def fit_beta_regression(covmodel_set, mr_data, path,
-                            two_stage=False, std=None):
-        return self.ode_process.create_result_df()
-
     def fit_beta_regression(self, covmodel_set, mr_data, path, two_stage=False,std=None):
         regressor = BetaRegressor(covmodel_set)
         regressor.fit(mr_data, two_stage, std)
