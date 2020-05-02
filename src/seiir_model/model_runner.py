@@ -60,7 +60,7 @@ class ModelRunner:
 
     @staticmethod
     def covmodels_prod():
-        cov_temp = CovModel(col_cov=COL_TEMP, use_re=True, bounds=np.array([-np.inf, 0.0]))
+        cov_temp = CovModel(col_cov=COL_TEMP, use_re=False, bounds=np.array([-np.inf, 0.0]))
         cov_testing = CovModel(col_cov=COL_TESTING, use_re=False, bounds=np.array([-np.inf, 0.0]))
         cov_pop_density = CovModel(col_cov=COL_POP_DENSITY, use_re=False, bounds=np.array([0.0, np.inf]))
         cov_mobility = CovModel(col_cov=COL_MOBILITY, use_re=True, bounds=np.array([0.0, np.inf]))
