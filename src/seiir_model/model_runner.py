@@ -7,7 +7,7 @@ from seiir_model.ode_forecasting import ODERunner
 
 COL_TEMP = 'temperature'
 COL_TESTING = 'testing'
-COL_POP_DENSITY = 'population_density'
+COL_POP_DENSITY = 'proportion_over_1k'
 COL_MOBILITY = 'mobility'
 
 
@@ -67,21 +67,20 @@ class ModelRunner:
         cov_intercept = CovModel(col_cov='intercept', use_re=True)
         return cov_temp, cov_testing, cov_pop_density, cov_mobility, cov_intercept
 
-    def fit_beta_regression_prod(self, mr_data, path):
+    def fit_beta_regression_prod(self, covmodel_set, mr_data, path):
         cov_temp, cov_testing, cov_pop_density, cov_mobility, cov_intercept = self.covmodels_prod()
 
         regressor = BetaRegressorSequential(
             ordered_covmodel_sets=[
                 CovModelSet([cov_temp]), 
-                CovModelSet([cov_testing, cov_pop_density, cov_mobility]),
-                CovModelSet([cov_intercept]),
+                CovModelSet([cov_testing, cov_pop_density, cov_mobility, cov_intercept]),
             ],
-            std=[1e-7] * 3,
+            std=[1e-7] * 2,
         )
         regressor.fit(mr_data)
         regressor.save_coef(path)
 
-    def predict_beta_forward_prod(self, df_cov, df_cov_coef, col_t, col_group):
+    def predict_beta_forward_prod(self, covmodel_set, df_cov, df_cov_coef, col_t, col_group):
         covmodel_set = CovModelSet(self.covmodels_prod())
         df = self.predict_beta_forward(covmodel_set, df_cov, df_cov_coef, col_t, col_group, 'ln_beta_pred')
         df['beta_pred'] = np.exp(df['ln_beta_pred'])
