@@ -244,6 +244,7 @@ class SingleGroupODEProcess:
                                        np.array([self.init_cond['S']]),
                                        self.t_params,
                                        -self.rhs_newE[None, :])[0]
+        neg_S_idx = S < 0.0
 
         # fit R
         self.step_ode_sys.update_given_params(c=0.0)
@@ -251,6 +252,14 @@ class SingleGroupODEProcess:
                                        np.array([self.init_cond['R']]),
                                        self.t_params,
                                        self.gamma2*I2[None, :])[0]
+
+        if np.any(neg_S_idx):
+            id_min = np.min(np.arange(S.size)[neg_S_idx])
+            S[id_min:] = S[id_min - 1]
+            E[id_min:] = E[id_min - 1]
+            I1[id_min:] = I1[id_min - 1]
+            I2[id_min:] = I2[id_min - 1]
+            R[id_min:] = R[id_min - 1]
 
         self.components = {
             'S': S,
