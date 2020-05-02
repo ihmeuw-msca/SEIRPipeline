@@ -19,6 +19,9 @@ class BetaRegressor:
 
         self.mr_model_fixed = MRModel(mr_data, self.covmodel_set_fixed)
         self.mr_model_fixed.fit_model()
+        cov_coef_fixed = list(self.mr_model_fixed.result.values())
+        for coef in cov_coef_fixed[1:]:
+            assert np.linalg.norm(coef - cov_coef_fixed[0]) < 1e-10
         self.cov_coef_fixed = list(self.mr_model_fixed.result.values())[0]
 
     def fit(self, mr_data):        

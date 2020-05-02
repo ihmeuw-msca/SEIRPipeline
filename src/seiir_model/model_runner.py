@@ -1,7 +1,7 @@
 import pandas as pd
 
 from seiir_model.ode_model import ODEProcess
-from seiir_model.regression_model.beta_fit import BetaRegressor, predict
+from seiir_model.regression_model.beta_fit import BetaRegressor, BetaRegressorSequential, predict
 from seiir_model.ode_forecasting import ODERunner
 
 
@@ -42,9 +42,9 @@ class ModelRunner:
         # save other parameters
         self.get_beta_ode_params().to_csv(params_file, index=False)
 
-    def fit_beta_regression(self, covmodel_set, mr_data, path, two_stage=False,std=None):
-        regressor = BetaRegressor(covmodel_set)
-        regressor.fit(mr_data, two_stage, std)
+    def fit_beta_regression(self, ordered_covmodel_sets, mr_data, path, two_stage=False,std=None):
+        regressor = BetaRegressorSequential(ordered_covmodel_sets)
+        regressor.fit(mr_data)
         regressor.save_coef(path)
 
     def predict_beta_forward(self, covmodel_set, df_cov, df_cov_coef, col_t, col_group, col_beta='beta_pred'):
