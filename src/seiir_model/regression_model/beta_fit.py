@@ -56,9 +56,10 @@ class BetaRegressor:
 
 class BetaRegressorSequential:
 
-    def __init__(self, ordered_covmodel_sets, std=1e-7):
+    def __init__(self, ordered_covmodel_sets, std):
+        assert len(ordered_covmodel_sets) == len(std)
         self.ordered_covmodel_sets = copy.deepcopy(ordered_covmodel_sets)
-        self.std = std
+        self.std = copy.deepcopy(std)
         self.col_covs = []
         for covmodel_set in self.ordered_covmodel_sets:
             self.col_covs.extend([covmodel.col_cov for covmodel in covmodel_set.cov_models])
@@ -71,8 +72,9 @@ class BetaRegressorSequential:
             regressor.fit_no_random(mr_data)
             if verbose:
                 print(regressor.cov_coef_fixed)
-            for covmodel, coef in zip(covmodel_set.cov_models, regressor.cov_coef_fixed):
-                covmodel.gprior = [coef, self.std]
+            std = self.std.pop(0)
+            for covmodel, coef in zip(covmodel_set.cov_models[len(covmodels):], regressor.cov_coef_fixed[len(covmodels):]):
+                covmodel.gprior = [coef, std]
             covmodels = covmodel_set.cov_models
 
         self.regressor = BetaRegressor(CovModelSet(covmodels))
