@@ -80,6 +80,9 @@ class BetaRegressorSequential:
     def load_coef(self, df=None, path=None):
         self.regressor.load_coef(df=df, path=path)
 
+    def predict(self, cov, group):
+        return self.regressor.predict(cov, group)
+
 
 def predict(regressor, df_cov, col_t, col_group, col_beta='beta_pred'):
     df = df_cov.sort_values(by=[col_group, col_t])
