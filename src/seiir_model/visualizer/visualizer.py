@@ -154,14 +154,15 @@ if __name__ == "__main__":
     groups = [102, 524, 532]
     #groups = [524]
     directories = Directories(regression_version="2020_05_02.01", forecast_version="2020_05_02.01")
-    visualizer = Visualizer(directories, groups=[102, 524], col_date=col_date, col_group=col_group)
+    visualizer = Visualizer(directories, groups=groups, col_date=col_date, col_group=col_group)
     compartments = ('S', 'E', 'I1', 'I2', 'R', 'beta')
     #compartments = ('S', 'E')
     colors = ('blue', 'orange', 'red', 'purple', 'green', 'blue')
 
     for group in groups:
         fig = plt.figure(figsize=(12, (len(compartments)+1) * 6))
-        grid = plt.GridSpec(len(compartments) + 1, 1, wspace=0.1, hspace=0.2)
+        grid = plt.GridSpec(len(compartments) + 1, 1, wspace=0.1, hspace=0.4)
+        fig.autofmt_xdate()
         for i, compartment in enumerate(compartments):
             ax = fig.add_subplot(grid[i, 0])
             visualizer.plot_ode_compartment(group=group, ax=ax,
@@ -176,7 +177,6 @@ if __name__ == "__main__":
             ax.legend(loc="upper left")
             ax.set_title(f"Location {group}: {compartment}")
 
-        fig.autofmt_xdate()
         plt.savefig(f"trajectories_{group}.pdf")
 
 
