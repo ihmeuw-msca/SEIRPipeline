@@ -274,6 +274,9 @@ class SingleGroupODEProcess:
         components.update({
             'newE': linear_interpolate(t, self.t_params, self.rhs_newE)
         })
+        components.update({
+            'newE_obs': linear_interpolate(t, self.t, self.obs)
+        })
         return params, components
 
     def create_result_df(self):
