@@ -1,8 +1,14 @@
 import pandas as pd
-
+import numpy as np
+from slime.model.cov_model import CovModelSet, CovModel
 from seiir_model.ode_model import ODEProcess
 from seiir_model.regression_model.beta_fit import BetaRegressor, BetaRegressorSequential, predict
 from seiir_model.ode_forecasting import ODERunner
+
+COL_TEMP = 'temperature'
+COL_TESTING = 'testing'
+COL_POP_DENSITY = 'population_density'
+COL_MOBILITY = 'mobility'
 
 
 class ModelRunner:
@@ -42,8 +48,8 @@ class ModelRunner:
         # save other parameters
         self.get_beta_ode_params().to_csv(params_file, index=False)
 
-    def fit_beta_regression(self, ordered_covmodel_sets, mr_data, path, two_stage=False,std=None):
-        regressor = BetaRegressorSequential(ordered_covmodel_sets)
+    def fit_beta_regression(self, ordered_covmodel_sets, mr_data, path, std):
+        regressor = BetaRegressorSequential(ordered_covmodel_sets, std)
         regressor.fit(mr_data)
         regressor.save_coef(path)
 
@@ -51,6 +57,35 @@ class ModelRunner:
         regressor = BetaRegressor(covmodel_set)
         regressor.load_coef(df=df_cov_coef)
         return predict(regressor, df_cov, col_t, col_group, col_beta)
+
+    @staticmethod
+    def covmodels_prod():
+        cov_temp = CovModel(col_cov=COL_TEMP, use_re=True, bounds=np.array([-np.inf, 0.0]))
+        cov_testing = CovModel(col_cov=COL_TESTING, use_re=False, bounds=np.array([-np.inf, 0.0]))
+        cov_pop_density = CovModel(col_cov=COL_POP_DENSITY, use_re=False, bounds=np.array([0.0, np.inf]))
+        cov_mobility = CovModel(col_cov=COL_MOBILITY, use_re=True, bounds=np.array([0.0, np.inf]))
+        cov_intercept = CovModel(col_cov='intercept', use_re=True)
+        return cov_temp, cov_testing, cov_pop_density, cov_mobility, cov_intercept
+
+    def fit_beta_regression_prod(self, mr_data, path):
+        cov_temp, cov_testing, cov_pop_density, cov_mobility, cov_intercept = self.covmodels_prod()
+
+        regressor = BetaRegressorSequential(
+            ordered_covmodel_sets=[
+                CovModelSet([cov_temp]), 
+                CovModelSet([cov_testing, cov_pop_density, cov_mobility]),
+                CovModelSet([cov_intercept]),
+            ],
+            std=[1e-7] * 3,
+        )
+        regressor.fit(mr_data)
+        regressor.save_coef(path)
+
+    def predict_beta_forward_prod(self, df_cov, df_cov_coef, col_t, col_group):
+        covmodel_set = CovModelSet(self.covmodels_prod())
+        df = self.predict_beta_forward(covmodel_set, df_cov, df_cov_coef, col_t, col_group, 'ln_beta_pred')
+        df['beta_pred'] = np.exp(df['ln_beta_pred'])
+        return df
 
     @staticmethod
     def forecast(model_specs, init_cond, times, betas,  dt=0.1):

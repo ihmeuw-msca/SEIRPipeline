@@ -93,6 +93,7 @@ class BetaRegressorSequential:
 
 def predict(regressor, df_cov, col_t, col_group, col_beta='beta_pred'):
     df = df_cov.sort_values(by=[col_group, col_t])
+    df['intercept'] = 1.0
     groups = df[col_group].unique()
     col_covs = regressor.col_covs
 
