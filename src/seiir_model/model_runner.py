@@ -8,7 +8,7 @@ from seiir_model.ode_forecasting import ODERunner
 COL_TEMP = 'temperature'
 COL_TESTING = 'testing'
 COL_POP_DENSITY = 'proportion_over_1k'
-COL_MOBILITY = 'mobility'
+COL_MOBILITY = 'mobility_lift'
 
 
 class ModelRunner:
