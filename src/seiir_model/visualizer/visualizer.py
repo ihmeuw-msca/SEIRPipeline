@@ -166,7 +166,7 @@ class Visualizer:
         now_date = past_time.to_list()[-1]
         end_date = future_time.to_list()[-1]
 
-        visualizer.format_x_axis(ax, start_date, now_date, end_date, major_tick_interval_days=14)
+        self.format_x_axis(ax, start_date, now_date, end_date, major_tick_interval_days=14)
 
     def plot_spline(self):
         num_locs = len(self.data)
@@ -199,7 +199,7 @@ class Visualizer:
         fig.autofmt_xdate()
         for i, compartment in enumerate(compartments):
             ax = fig.add_subplot(grid[i, 0])
-            visualizer.plot_ode_compartment(group=group, ax=ax,
+            self.plot_ode_compartment(group=group, ax=ax,
                                             compartment=compartment,
                                             linestyle="solid",
                                             transparency=0.1,
