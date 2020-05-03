@@ -64,25 +64,27 @@ class ModelRunner:
         cov_testing = CovModel(col_cov=COL_TESTING, use_re=False, bounds=np.array([-np.inf, 0.0]))
         cov_pop_density = CovModel(col_cov=COL_POP_DENSITY, use_re=False, bounds=np.array([0.0, np.inf]))
         cov_mobility = CovModel(col_cov=COL_MOBILITY, use_re=True, bounds=np.array([0.0, np.inf]))
-        cov_intercept = CovModel(col_cov='intercept', use_re=True)
+        cov_intercept = CovModel(col_cov='intercept', use_re=True, re_var=np.inf)
         return cov_temp, cov_testing, cov_pop_density, cov_mobility, cov_intercept
 
-    def fit_beta_regression_prod(self, covmodel_set, mr_data, path, std):
-        cov_temp, cov_testing, cov_pop_density, cov_mobility, cov_intercept = self.covmodels_prod()
+    def fit_beta_regression_prod(self, covmodel_set, mr_data, path):
+        cov_temp, cov_testing, cov_pop_density, cov_mobility, _ = self.covmodels_prod()
 
         regressor = BetaRegressorSequential(
             ordered_covmodel_sets=[
-                CovModelSet([cov_temp]), 
-                CovModelSet([cov_testing, cov_pop_density, cov_mobility, cov_intercept]),
+                CovModelSet([cov_mobility]),
+                CovModelSet([cov_pop_density]),
+                CovModelSet([cov_temp]),
+                CovModelSet([cov_testing]),
             ],
-            std=[std] * 2,
+            std=[1e-7] * 4,
         )
         regressor.fit(mr_data)
         regressor.save_coef(path)
 
     def predict_beta_forward_prod(self, covmodel_set, df_cov, df_cov_coef, col_t, col_group):
         cov_temp, cov_testing, cov_pop_density, cov_mobility, cov_intercept = self.covmodels_prod()
-        covmodel_set = CovModelSet([cov_temp, cov_testing, cov_pop_density, cov_mobility, cov_intercept])
+        covmodel_set = CovModelSet([cov_intercept, cov_temp, cov_testing, cov_pop_density, cov_mobility])
         df = self.predict_beta_forward(covmodel_set, df_cov, df_cov_coef, col_t, col_group, 'ln_beta_pred')
         df['beta_pred'] = np.exp(df['ln_beta_pred'])
         return df
