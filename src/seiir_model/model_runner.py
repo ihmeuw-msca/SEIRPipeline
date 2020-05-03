@@ -70,18 +70,12 @@ class ModelRunner:
     def fit_beta_regression_prod(self, covmodel_set, mr_data, path, std):
         cov_temp, cov_testing, cov_pop_density, cov_mobility, cov_intercept = self.covmodels_prod()
 
-        cov_temp.gprior = np.array([0, std])
-        cov_testing.gprior = np.array([0, std])
-        cov_pop_density.gprior = np.array([0, std])
-        cov_mobility.gprior = np.array([0, std])
-        cov_intercept.gprior = np.array([0, std])
-
         regressor = BetaRegressorSequential(
             ordered_covmodel_sets=[
                 CovModelSet([cov_temp]), 
                 CovModelSet([cov_testing, cov_pop_density, cov_mobility, cov_intercept]),
             ],
-            std=[1e-7] * 2,
+            std=[std] * 2,
         )
         regressor.fit(mr_data)
         regressor.save_coef(path)
