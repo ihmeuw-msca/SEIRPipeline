@@ -3,7 +3,7 @@ import numpy as np
 import copy
 
 from slime.core import MRData
-from slime.model import CovModelSet, MRModel
+from slime.model import CovModelSet, MRModel, CovModel
 
 
 class BetaRegressor:
@@ -65,17 +65,22 @@ class BetaRegressorSequential:
         for covmodel_set in self.ordered_covmodel_sets:
             self.col_covs.extend([covmodel.col_cov for covmodel in covmodel_set.cov_models])
     
-    def fit(self, mr_data, verbose=False):
-        covmodels = []
+    def fit(self, mr_data, verbose=False, add_intercept=True):
+        if add_intercept:
+            covmodels = [CovModel(col_cov='intercept', use_re=True, re_var=np.inf)]
+            self.col_covs.insert(0, 'intercept')
+        else:
+            covmodels = []
         while len(self.ordered_covmodel_sets) > 0:
             covmodel_set = CovModelSet(covmodels + self.ordered_covmodel_sets.pop(0).cov_models)
             regressor = BetaRegressor(covmodel_set)
             regressor.fit_no_random(mr_data)
             if verbose:
                 print(regressor.cov_coef_fixed)
-            std = self.std.pop(0)
+            # std = self.std.pop(0)
             for covmodel, coef in zip(covmodel_set.cov_models[len(covmodels):], regressor.cov_coef_fixed[len(covmodels):]):
-                covmodel.gprior = [coef, std]
+                # covmodel.gprior = [coef, std]
+                covmodel.bounds = np.array([coef, coef])
             covmodels = covmodel_set.cov_models
 
         self.regressor = BetaRegressor(CovModelSet(covmodels))
