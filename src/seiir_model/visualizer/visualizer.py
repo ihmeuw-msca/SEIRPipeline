@@ -1,8 +1,9 @@
+import matplotlib
+matplotlib.use('Agg')
+import matplotlib.pyplot as plt
 import os
-
 import numpy as np
 import pandas as pd
-from matplotlib import pyplot as plt
 import matplotlib.dates as mdates
 
 from seiir_model_pipeline.core.versioner import Directories
