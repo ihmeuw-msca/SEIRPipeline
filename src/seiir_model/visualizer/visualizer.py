@@ -151,17 +151,15 @@ class Visualizer:
 
 class PlotBetaCoef:
     def __init__(self,
-                 directory: Directories,
-                 location_set_version_id):
-        self.directory = directory
-
-        self.path_to_location_metadata = self.directory.get_location_metadata_file(
-            location_set_version_id)
-        self.path_to_coef_dir = self.directory.regression_coefficient_dir
-        self.path_to_savefig = self.directory.regression_diagnostic_dir
-
+                 directories: Directories):
+        self.directories = directories
         # load settings
-        self.settings = load_regression_settings(directory.regression_version)
+        self.settings = load_regression_settings(directories.regression_version)
+        self.path_to_location_metadata = self.directories.get_location_metadata_file(
+            self.settings.location_set_version_id)
+        self.path_to_coef_dir = self.directories.regression_coefficient_dir
+        self.path_to_savefig = self.directories.regression_diagnostic_dir
+
 
         # load metadata
         self.location_metadata = pd.read_csv(self.path_to_location_metadata)
@@ -170,8 +168,7 @@ class PlotBetaCoef:
 
         # load coef
         df_coef = [
-            pd.read_csv(
-                '/'.join([self.path_to_coef_dir, f'coefficients_{i}.csv']))
+            pd.read_csv(self.directories.get_draw_coefficient_file(i))
             for i in range(self.settings.n_draws)
         ]
 
@@ -215,22 +212,21 @@ class PlotBetaCoef:
             plt.grid(b=True)
             plt.box(on=None)
             plt.title(cov)
-            plt.savefig('/'.join([self.path_to_savefig,
-                                  f'{cov}_boxplot.pdf']), bbox_inches='tight')
+            plt.savefig(self.path_to_savefig / f'{cov}_boxplot.pdf',
+                        bbox_inches='tight')
 
 
 class PlotBetaResidual:
     def __init__(self,
-                 directory: Directories,
-                 location_set_version_id):
-        self.directory = directory
-        self.path_to_location_metadata = self.directory.get_location_metadata_file(
-            location_set_version_id)
-        self.path_to_betas_dir = self.directory.regression_beta_fit_dir
-        self.path_to_savefig = self.directory.regression_diagnostic_dir
-
+                 directories: Directories):
+        self.directories = directories
         # load settings
-        self.settings = load_regression_settings(directory.regression_version)
+        self.settings = load_regression_settings(directories.regression_version)
+        self.path_to_location_metadata = self.directories.get_location_metadata_file(
+            self.settings.location_set_version_id)
+        self.path_to_betas_dir = self.directories.regression_beta_fit_dir
+        self.path_to_savefig = self.directories.regression_diagnostic_dir
+
 
         # load location metadata
         self.location_metadata = pd.read_csv(self.path_to_location_metadata)
@@ -239,8 +235,7 @@ class PlotBetaResidual:
 
         # load the beta data
         df_beta = [
-            pd.read_csv(
-                '/'.join([self.path_to_betas_dir, f'fit_draw_{i}.csv']))[[
+            pd.read_csv(self.directories.get_draw_beta_fit_file(i))[[
                 'loc_id',
                 'date',
                 'days',
@@ -275,8 +270,8 @@ class PlotBetaResidual:
         for i, loc in enumerate(self.locs):
             ax[i].hist(self.rmse_data[:, i])
             ax[i].set_title(loc)
-        plt.savefig('/'.join([self.path_to_savefig,
-                              f'residual_rmse_histo.pdf']), bbox_inches='tight')
+        plt.savefig(self.path_to_savefig / f'residual_rmse_histo.pdf',
+                    bbox_inches='tight')
 
         plt.figure(figsize=(8, 15))
         sort_idx = np.argsort(self.rmse_data.mean(axis=0))
@@ -288,8 +283,7 @@ class PlotBetaResidual:
         plt.yticks(ticks=np.arange(self.num_locs) + 1,
                    labels=self.locs[sort_idx])
         plt.title('Beta Regression Residual RMSE')
-        plt.savefig('/'.join([self.path_to_savefig,
-                              f'residual_rmse_boxplot.pdf']),
+        plt.savefig(self.path_to_savefig / f'residual_rmse_boxplot.pdf',
                     bbox_inches='tight')
 
 
