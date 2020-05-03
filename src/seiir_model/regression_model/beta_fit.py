@@ -15,8 +15,7 @@ class BetaRegressor:
     def fit_no_random(self, mr_data):
         self.covmodel_set_fixed = copy.deepcopy(self.covmodel_set)
         for covmodel in self.covmodel_set_fixed.cov_models:
-            covmodel.use_re = False
-            covmodel.gprior = None 
+            covmodel.use_re = False 
 
         self.mr_model_fixed = MRModel(mr_data, self.covmodel_set_fixed)
         self.mr_model_fixed.fit_model()
@@ -75,8 +74,7 @@ class BetaRegressorSequential:
                 print(regressor.cov_coef_fixed)
             std = self.std.pop(0)
             for covmodel, coef in zip(covmodel_set.cov_models[len(covmodels):], regressor.cov_coef_fixed[len(covmodels):]):
-                # covmodel.gprior = [coef, std]
-                covmodel.gprior[0] = coef
+                covmodel.gprior = [coef, std]
             covmodels = covmodel_set.cov_models
 
         self.regressor = BetaRegressor(CovModelSet(covmodels))
