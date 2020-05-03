@@ -6,6 +6,9 @@ from matplotlib import pyplot as plt
 import matplotlib.dates as mdates
 
 from seiir_model.visualizer.versioner import Directories
+#from seiir_model_pipeline.core.versioner import Directories
+#from seiir_model_pipeline.core.versioner import load_regression_settings, load_forecast_settings
+
 
 ODE_BETA_FIT = "ode_beta_fit"
 COEFFICIENTS_FIT = "coefficients_fit"
@@ -152,6 +155,24 @@ class Visualizer:
 
         visualizer.format_x_axis(ax, start_date, now_date, end_date, major_tick_interval_days=14)
 
+    def plot_spline(self):
+        num_locs = len(self.data)
+        fig, ax = plt.subplots(num_locs, 1,
+                               figsize=(8, 4*num_locs))
+        for i, loc_id in enumerate(self.data.keys()):
+            for j in range(self.regression_settings.n_draws):
+                df = self.data[loc_id][ODE_BETA_FIT].sort_values('date')
+                ax[i].scatter(np.arange(df.shape[0]), df['newE_obs'],
+                              marker='.', c='#ADD8E6', alpha=0.7)
+                ax[i].plot(np.arange(df.shape[0]), df['newE'], c='#008080',
+                           alpha=0.5, linewidth=1.0)
+            ax[i].set_xticks(np.arange(df.shape[0])[::5])
+            ax[i].set_xticklabels(df['date'][::5], rotation='vertical')
+            ax[i].set_title()
+
+        plt.savefig(self.directories.regression_diagnostic_dir / 'spline_fit.png',
+                    bbox_inches='tight')
+
     def create_trajectories_plot(self,
                                  group,
                                  output_dir="plots",
@@ -216,6 +237,146 @@ class Visualizer:
 
         plt.savefig(os.path.join(output_dir, f"final_draws_refflog_{group_name}.pdf"))
         plt.close(fig)
+
+
+class PlotBetaCoef:
+    def __init__(self,
+                 directories: Directories):
+        self.directories = directories
+        # load settings
+        self.settings = load_regression_settings(directories.regression_version)
+        self.path_to_location_metadata = self.directories.get_location_metadata_file(
+            self.settings.location_set_version_id)
+        self.path_to_coef_dir = self.directories.regression_coefficient_dir
+        self.path_to_savefig = self.directories.regression_diagnostic_dir
+
+
+        # load metadata
+        self.location_metadata = pd.read_csv(self.path_to_location_metadata)
+        self.id2loc = self.location_metadata.set_index('location_id')[
+            'location_name'].to_dict()
+
+        # load coef
+        df_coef = [
+            pd.read_csv(self.directories.get_draw_coefficient_file(i))
+            for i in range(self.settings.n_draws)
+        ]
+
+        # organize information
+        self.covs = np.sort(list(self.settings.covariates.keys()))
+        self.covs = np.append(self.covs, 'intercept')
+        self.loc_ids = np.sort(list(df_coef[0]['group_id'].unique()))
+        self.locs = np.array([
+            self.id2loc[loc_id]
+            for loc_id in self.loc_ids
+        ])
+        self.num_locs = len(self.locs)
+
+        # group coef data
+        self.coef_data = {}
+        for cov in self.covs:
+            coef_mat = np.vstack([
+                df[cov].values
+                for df in df_coef
+            ])
+            coef_label = self.locs.copy()
+            coef_mean = coef_mat.mean(axis=0)
+            sort_idx = np.argsort(coef_mean)
+            self.coef_data[cov] = (coef_label[sort_idx], coef_mat[:, sort_idx])
+
+    def plot_coef(self):
+        for cov in self.covs:
+            plt.figure(figsize=(8, 15))
+            plt.boxplot(self.coef_data[cov][1], vert=False, showfliers=False,
+                        boxprops=dict(linewidth=0.5),
+                        whiskerprops=dict(linewidth=0.5))
+            plt.yticks(ticks=np.arange(self.num_locs) + 1,
+                       labels=self.coef_data[cov][0])
+            coef_mean = self.coef_data[cov][1].mean()
+            plt.vlines(coef_mean, ymin=1, ymax=self.num_locs,
+                       linewidth=1.0, linestyle='--', color='#003152')
+            #             for b in self.settings['covariates'][cov]['bounds']:
+            #                 if np.abs(b) >= np.abs(coef_mean)*2:
+            #                     continue
+            #                 plt.vlines(b, ymin=1, ymax=self.num_locs,
+            #                            linewidth=1.0, linestyle='-', color='#8B0000')
+            plt.grid(b=True)
+            plt.box(on=None)
+            plt.title(cov)
+            plt.savefig(self.path_to_savefig / f'{cov}_boxplot.pdf',
+                        bbox_inches='tight')
+
+
+class PlotBetaResidual:
+    def __init__(self,
+                 directories: Directories):
+        self.directories = directories
+        # load settings
+        self.settings = load_regression_settings(directories.regression_version)
+        self.path_to_location_metadata = self.directories.get_location_metadata_file(
+            self.settings.location_set_version_id)
+        self.path_to_betas_dir = self.directories.regression_beta_fit_dir
+        self.path_to_savefig = self.directories.regression_diagnostic_dir
+
+
+        # load location metadata
+        self.location_metadata = pd.read_csv(self.path_to_location_metadata)
+        self.id2loc = self.location_metadata.set_index('location_id')[
+            'location_name'].to_dict()
+
+        # load the beta data
+        df_beta = [
+            pd.read_csv(self.directories.get_draw_beta_fit_file(i))[[
+                'loc_id',
+                'date',
+                'days',
+                'beta',
+                'beta_pred'
+            ]].dropna()
+            for i in range(self.settings.n_draws)
+        ]
+
+        # location information
+        self.loc_ids = np.sort(list(df_beta[0]['loc_id'].unique()))
+        self.locs = np.array([
+            self.id2loc[loc_id]
+            for loc_id in self.loc_ids
+        ])
+        self.num_locs = len(self.locs)
+
+        # compute RMSE
+        self.rmse_data = np.vstack([
+            np.array([self.get_rmse(df, loc_id) for loc_id in self.loc_ids])
+            for df in df_beta
+        ])
+
+    def get_rmse(self, df, loc_id):
+        beta = df.loc[df.loc_id == loc_id, 'beta'].values
+        pred_beta = df.loc[df.loc_id == loc_id, 'beta_pred'].values
+
+        return np.sqrt(np.mean((beta - pred_beta)**2))
+
+    def plot_residual(self):
+        fig, ax = plt.subplots(self.num_locs, 1, figsize=(8, 4*self.num_locs))
+        for i, loc in enumerate(self.locs):
+            ax[i].hist(self.rmse_data[:, i])
+            ax[i].set_title(loc)
+        plt.savefig(self.path_to_savefig / f'residual_rmse_histo.pdf',
+                    bbox_inches='tight')
+
+        plt.figure(figsize=(8, 15))
+        sort_idx = np.argsort(self.rmse_data.mean(axis=0))
+        plt.boxplot(self.rmse_data[:, sort_idx], vert=False, showfliers=False,
+                    boxprops=dict(linewidth=0.5),
+                    whiskerprops=dict(linewidth=0.5))
+        plt.grid(b=True)
+        plt.box(on=None)
+        plt.yticks(ticks=np.arange(self.num_locs) + 1,
+                   labels=self.locs[sort_idx])
+        plt.title('Beta Regression Residual RMSE')
+        plt.savefig(self.path_to_savefig / f'residual_rmse_boxplot.pdf',
+                    bbox_inches='tight')
+
 
 if __name__ == "__main__":
     col_date = "date"
