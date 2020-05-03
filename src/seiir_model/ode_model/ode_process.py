@@ -64,7 +64,7 @@ class SingleGroupODEProcess:
         df.sort_values(self.col_date, inplace=True)
         date = pd.to_datetime(df[col_date])
         self.today = np.datetime64(datetime.today())
-        idx = date < self.today + np.timedelta64(X - self.lag_days)
+        idx = date < self.today + np.timedelta64(X - self.lag_days, 'D')
         idx = idx & df[col_cases] > 0.0
         self.df = df[idx].iloc[1:].copy()
         date = date[idx][1:]
