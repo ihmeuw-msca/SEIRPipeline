@@ -253,6 +253,8 @@ class Visualizer:
                     else:
                         ax.plot(time, compartment_data[draw_name], linestyle=linestyle, c=color[i], alpha=transparency)
                     ax.plot([start_date, end_date], [1, 1], linestyle='--', c="black")
+                ax.plot(time, compartment_data[draw_name], linestyle=linestyle,
+                        c=color[i], alpha=transparency)
                 draw_num += 1
             self.format_x_axis(ax, start_date=start_date, now_date=now_date, end_date=end_date,
                                major_tick_interval_days=14)
@@ -310,7 +312,7 @@ class PlotBetaCoef:
 
     def plot_coef(self):
         for cov in self.covs:
-            plt.figure(figsize=(8, 15))
+            plt.figure(figsize=(8, 20))
             plt.boxplot(self.coef_data[cov][1], vert=False, showfliers=False,
                         boxprops=dict(linewidth=0.5),
                         whiskerprops=dict(linewidth=0.5))
@@ -387,7 +389,7 @@ class PlotBetaResidual:
         plt.savefig(self.path_to_savefig / f'residual_rmse_histo.pdf',
                     bbox_inches='tight')
 
-        plt.figure(figsize=(8, 15))
+        plt.figure(figsize=(8, 20))
         sort_idx = np.argsort(self.rmse_data.mean(axis=0))
         plt.boxplot(self.rmse_data[:, sort_idx], vert=False, showfliers=False,
                     boxprops=dict(linewidth=0.5),
