@@ -84,7 +84,7 @@ class ModelRunner:
 
     def predict_beta_forward_prod(self, covmodel_set, df_cov, df_cov_coef, col_t, col_group):
         cov_temp, cov_testing, cov_pop_density, cov_mobility, cov_intercept = self.covmodels_prod()
-        covmodel_set = CovModelSet([cov_intercept, cov_temp, cov_testing, cov_pop_density, cov_mobility])
+        covmodel_set = CovModelSet([cov_intercept, cov_mobility, cov_pop_density, cov_temp, cov_testing])
         df = self.predict_beta_forward(covmodel_set, df_cov, df_cov_coef, col_t, col_group, 'ln_beta_pred')
         df['beta_pred'] = np.exp(df['ln_beta_pred'])
         return df
