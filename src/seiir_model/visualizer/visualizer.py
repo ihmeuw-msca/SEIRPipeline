@@ -1,4 +1,5 @@
 import matplotlib
+
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import os
@@ -45,7 +46,7 @@ class Visualizer:
         } for group in self.groups}
         self.params_for_draws = []
 
-        #self.metadata = pd.read_csv("../../../data/covid/metadata-inputs/location_metadata_652.csv")
+        # self.metadata = pd.read_csv("../../../data/covid/metadata-inputs/location_metadata_652.csv")
         # TODO: change it for cluster
         # self.metadata = pd.read_csv(directories.get_location_metadata_file(location_set_version_id=652))
 
@@ -104,9 +105,12 @@ class Visualizer:
         #  read final draws
         if os.path.isdir(directories.forecast_output_draw_dir):
             for group in groups:
-                self.data[group][OUTPUT_DRAWS_CASES] = pd.read_csv(os.path.join(directories.forecast_output_draw_dir, f"cases_{group}.csv"))
-                self.data[group][OUTPUT_DRAWS_DEATHS] = pd.read_csv(os.path.join(directories.forecast_output_draw_dir, f"deaths_{group}.csv"))
-                self.data[group][OUTPUT_DRAWS_REFF] = pd.read_csv(os.path.join(directories.forecast_output_draw_dir, f"reff_{group}.csv"))
+                self.data[group][OUTPUT_DRAWS_CASES] = pd.read_csv(
+                    os.path.join(directories.forecast_output_draw_dir, f"cases_{group}.csv"))
+                self.data[group][OUTPUT_DRAWS_DEATHS] = pd.read_csv(
+                    os.path.join(directories.forecast_output_draw_dir, f"deaths_{group}.csv"))
+                self.data[group][OUTPUT_DRAWS_REFF] = pd.read_csv(
+                    os.path.join(directories.forecast_output_draw_dir, f"reff_{group}.csv"))
 
     def format_x_axis(self, ax, start_date, now_date, end_date,
                       major_tick_interval_days=7, margins_days=5):
@@ -171,7 +175,7 @@ class Visualizer:
     def plot_spline(self):
         num_locs = len(self.data)
         fig, ax = plt.subplots(num_locs, 1,
-                               figsize=(8, 4*num_locs))
+                               figsize=(8, 4 * num_locs))
         for i, loc_id in enumerate(self.data.keys()):
             for j in range(self.regression_settings.n_draws):
                 df = self.data[loc_id][ODE_BETA_FIT].sort_values('date')
@@ -189,22 +193,22 @@ class Visualizer:
     def create_trajectories_plot(self,
                                  group,
                                  output_dir="plots",
-                                 compartments = ('S', 'E', 'I1', 'I2', 'R', 'beta'),
-                                 colors = ('blue', 'orange', 'red', 'purple', 'green', 'blue')):
+                                 compartments=('S', 'E', 'I1', 'I2', 'R', 'beta'),
+                                 colors=('blue', 'orange', 'red', 'purple', 'green', 'blue')):
         # TODO: comment 2 and uncomment 1 for cluster
         group_name = self.id2loc[group]
         # group_name = self.metadata[self.metadata['location_id'] == group]['location_name'].to_list()[0]
-        fig = plt.figure(figsize=(12, (len(compartments)+1) * 6))
+        fig = plt.figure(figsize=(12, (len(compartments) + 1) * 6))
         grid = plt.GridSpec(len(compartments) + 1, 1, wspace=0.1, hspace=0.4)
         fig.autofmt_xdate()
         for i, compartment in enumerate(compartments):
             ax = fig.add_subplot(grid[i, 0])
             self.plot_ode_compartment(group=group, ax=ax,
-                                            compartment=compartment,
-                                            linestyle="solid",
-                                            transparency=0.1,
-                                            color=colors[i],
-                                            )
+                                      compartment=compartment,
+                                      linestyle="solid",
+                                      transparency=0.1,
+                                      color=colors[i],
+                                      )
             ax.grid(True)
             # ax.legend(loc="upper left")
             ax.set_title(f"Location {group_name}: {compartment}")
@@ -216,7 +220,8 @@ class Visualizer:
     def create_final_draws_plot(self,
                                 group,
                                 compartments=('Cases', 'Deaths', 'R_effective'),
-                                output_dir = "plots",
+                                R_effective_in_log=True,
+                                output_dir="plots",
                                 linestyle="solid",
                                 transparency=0.1,
                                 color=('orange', 'red', 'blue')):
@@ -238,16 +243,19 @@ class Visualizer:
             time = pd.to_datetime(compartment_data[self.col_date])
             start_date = time.to_list()[0]
             end_date = time.to_list()[-1]
-            now_date = pd.to_datetime(compartment_data[compartment_data['observed']== 1][self.col_date]).to_list()[-1]
+            now_date = pd.to_datetime(compartment_data[compartment_data['observed'] == 1][self.col_date]).to_list()[-1]
             draw_num = 0
             while f"draw_{draw_num}" in compartment_data.columns:
                 draw_name = f"draw_{draw_num}"
                 if compartment == "R_effective":
-                    ax.semilogy(time, compartment_data[draw_name], linestyle=linestyle, c=color[i], alpha=transparency)
-                else:
-                    ax.plot(time, compartment_data[draw_name], linestyle=linestyle, c=color[i], alpha=transparency)
+                    if R_effective_in_log is True:
+                        ax.semilogy(time, compartment_data[draw_name], linestyle=linestyle, c=color[i], alpha=transparency)
+                    else:
+                        ax.plot(time, compartment_data[draw_name], linestyle=linestyle, c=color[i], alpha=transparency)
+                    ax.plot([start_date, end_date], [1, 1], linestyle='--', c="black")
                 draw_num += 1
-            self.format_x_axis(ax, start_date=start_date, now_date=now_date, end_date=end_date, major_tick_interval_days=14)
+            self.format_x_axis(ax, start_date=start_date, now_date=now_date, end_date=end_date,
+                               major_tick_interval_days=14)
             ax.set_title(f"{group_name}: {compartment}")
 
         print(f"Final draws plot for {group} {group_name} is done")
@@ -266,7 +274,6 @@ class PlotBetaCoef:
             self.settings.location_set_version_id)
         self.path_to_coef_dir = self.directories.regression_coefficient_dir
         self.path_to_savefig = self.directories.regression_diagnostic_dir
-
 
         # load metadata
         self.location_metadata = pd.read_csv(self.path_to_location_metadata)
@@ -335,7 +342,6 @@ class PlotBetaResidual:
         self.path_to_betas_dir = self.directories.regression_beta_fit_dir
         self.path_to_savefig = self.directories.regression_diagnostic_dir
 
-
         # load location metadata
         self.location_metadata = pd.read_csv(self.path_to_location_metadata)
         self.id2loc = self.location_metadata.set_index('location_id')[
@@ -371,10 +377,10 @@ class PlotBetaResidual:
         beta = df.loc[df.loc_id == loc_id, 'beta'].values
         pred_beta = df.loc[df.loc_id == loc_id, 'beta_pred'].values
 
-        return np.sqrt(np.mean((beta - pred_beta)**2))
+        return np.sqrt(np.mean((beta - pred_beta) ** 2))
 
     def plot_residual(self):
-        fig, ax = plt.subplots(self.num_locs, 1, figsize=(8, 4*self.num_locs))
+        fig, ax = plt.subplots(self.num_locs, 1, figsize=(8, 4 * self.num_locs))
         for i, loc in enumerate(self.locs):
             ax[i].hist(self.rmse_data[:, i])
             ax[i].set_title(loc)
@@ -398,14 +404,14 @@ class PlotBetaResidual:
 if __name__ == "__main__":
     col_date = "date"
     col_group = "loc_id"
-    all_groups = [102, 524, 526, 528,530,532,534,536,538,540,542,544,546,548,550,552,554,556,558,560,562,564,566,568,570,572]
-    all_groups += [523,525,527,529,531,533,535,537,539,541,543,545,547,549,551,553,555,557,559,561,563,565,567,569,571,573]
-    #groups = all_groups
-    groups = [526,528,530,534,572]
-    #groups = [524]
+    all_groups = [102, 524, 526, 528, 530, 532, 534, 536, 538, 540, 542, 544, 546, 548, 550, 552, 554, 556, 558, 560,
+                  562, 564, 566, 568, 570, 572]
+    all_groups += [523, 525, 527, 529, 531, 533, 535, 537, 539, 541, 543, 545, 547, 549, 551, 553, 555, 557, 559, 561,
+                   563, 565, 567, 569, 571, 573]
+    # groups = all_groups
+    groups = [526, 528, 530, 534, 572]
+    # groups = [524]
     version = "2020_05_03.03"
-
-
 
     directories = Directories(regression_version=version, forecast_version=version)
     visualizer = Visualizer(directories, groups=groups, col_date=col_date, col_group=col_group)
@@ -418,5 +424,3 @@ if __name__ == "__main__":
         visualizer.create_final_draws_plot(group=group,
                                            # TODO: Same
                                            output_dir=".")
-
-
