@@ -13,8 +13,7 @@ from odeopt.ode import LinearFirstOrder
 from odeopt.core.utils import linear_interpolate
 from .spline_fit import SplineFit
 
-X = 14
-Y = 18
+X = 8
 
 
 class SingleGroupODEProcess:
@@ -23,8 +22,7 @@ class SingleGroupODEProcess:
                  col_cases,
                  col_pop,
                  col_loc_id,
-                 peak_date,
-                 day_shift=4,
+                 lag_days=17,
                  alpha=(0.95,)*2,
                  sigma=(0.2,)*2,
                  gamma1=(0.5,)*2,
@@ -62,23 +60,11 @@ class SingleGroupODEProcess:
         self.col_loc_id = col_loc_id
 
         # subset the data
-        if peak_date is not None:
-            self.peak_date = np.datetime64(peak_date)
-        else:
-            self.peak_date = None
-        self.day_shift = day_shift
+        self.lag_days = lag_days
         df.sort_values(self.col_date, inplace=True)
         date = pd.to_datetime(df[col_date])
-        x = X
-        y = Y + self.day_shift
         self.today = np.datetime64(datetime.today())
-        if self.peak_date is not None:
-            idx = date < max(
-                self.today + np.timedelta64(x - y),
-                self.peak_date + np.timedelta64((x - 4) - y)
-            )
-        else:
-            idx = date < self.today + np.timedelta64(x - y)
+        idx = date < self.today + np.timedelta64(X - self.lag_days, 'D')
         idx = idx & df[col_cases] > 0.0
         self.df = df[idx].iloc[1:].copy()
         date = date[idx][1:]
@@ -244,6 +230,7 @@ class SingleGroupODEProcess:
                                        np.array([self.init_cond['S']]),
                                        self.t_params,
                                        -self.rhs_newE[None, :])[0]
+        neg_S_idx = S < 0.0
 
         # fit R
         self.step_ode_sys.update_given_params(c=0.0)
@@ -251,6 +238,14 @@ class SingleGroupODEProcess:
                                        np.array([self.init_cond['R']]),
                                        self.t_params,
                                        self.gamma2*I2[None, :])[0]
+
+        if np.any(neg_S_idx):
+            id_min = np.min(np.arange(S.size)[neg_S_idx])
+            S[id_min:] = S[id_min - 1]
+            E[id_min:] = E[id_min - 1]
+            I1[id_min:] = I1[id_min - 1]
+            I2[id_min:] = I2[id_min - 1]
+            R[id_min:] = R[id_min - 1]
 
         self.components = {
             'S': S,
@@ -273,6 +268,9 @@ class SingleGroupODEProcess:
         }
         components.update({
             'newE': linear_interpolate(t, self.t_params, self.rhs_newE)
+        })
+        components.update({
+            'newE_obs': linear_interpolate(t, self.t, self.obs)
         })
         return params, components
 
@@ -309,6 +307,7 @@ class ODEProcessInput:
     col_cases: str
     col_pop: str
     col_loc_id: str
+    col_lag_days: str
 
     alpha: Tuple
     sigma: Tuple
@@ -316,8 +315,6 @@ class ODEProcessInput:
     gamma2: Tuple
     solver_dt: float
     spline_options: Dict
-    peak_date_dict: Dict
-    day_shift: int
 
 
 class ODEProcess:
@@ -334,6 +331,7 @@ class ODEProcess:
         self.col_cases = input.col_cases
         self.col_pop = input.col_pop
         self.col_loc_id = input.col_loc_id
+        self.col_lag_days = input.col_lag_days
 
         self.alpha = input.alpha
         self.sigma = input.sigma
@@ -341,8 +339,6 @@ class ODEProcess:
         self.gamma2 = input.gamma2
         self.solver_dt = input.solver_dt
         self.spline_options = input.spline_options
-        self.peak_date_dict = input.peak_date_dict
-        self.day_shift = input.day_shift
 
         # create the location id
         self.loc_ids = np.sort(list(self.df_dict.keys()))
@@ -353,6 +349,10 @@ class ODEProcess:
         self.gamma1 = np.random.uniform(*self.gamma1)
         self.gamma2 = np.random.uniform(*self.gamma2)
 
+        # lag days
+        self.lag_days = self.df_dict[self.loc_ids[0]][
+            self.col_lag_days].values[0]
+
         # create model for each location
         self.models = {
             loc_id: SingleGroupODEProcess(
@@ -361,9 +361,7 @@ class ODEProcess:
                 self.col_cases,
                 self.col_pop,
                 self.col_loc_id,
-                self.peak_date_dict[loc_id]
-                if loc_id in self.peak_date_dict else None,
-                day_shift=self.day_shift,
+                lag_days=self.lag_days,
                 alpha=(self.alpha,)*2,
                 sigma=(self.sigma,)*2,
                 gamma1=(self.gamma1,)*2,

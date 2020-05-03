@@ -1,14 +1,16 @@
+import matplotlib
+matplotlib.use('Agg')
+import matplotlib.pyplot as plt
 import os
-
 import numpy as np
 import pandas as pd
-from matplotlib import pyplot as plt
 import matplotlib.dates as mdates
 
+# TODO: This is my local copy of Directories
 from seiir_model.visualizer.versioner import Directories
+# TODO: Comment above and uncomment these  on cluster
 #from seiir_model_pipeline.core.versioner import Directories
 #from seiir_model_pipeline.core.versioner import load_regression_settings, load_forecast_settings
-
 
 ODE_BETA_FIT = "ode_beta_fit"
 COEFFICIENTS_FIT = "coefficients_fit"
@@ -46,6 +48,17 @@ class Visualizer:
         #self.metadata = pd.read_csv("../../../data/covid/metadata-inputs/location_metadata_652.csv")
         # TODO: change it for cluster
         self.metadata = pd.read_csv(directories.get_location_metadata_file(location_set_version_id=652))
+
+        # dictionary of location_id to name
+        # TODO: uncomment it for cluster to make Peng's part working
+        # self.regression_settings = load_regression_settings(directories.regression_version)
+        # self.forecast_settings = load_forecast_settings(directories.forecast_version)
+        # self.location_metadata = pd.read_csv(
+        #     self.directories.get_location_metadata_file(
+        #         self.regression_settings.location_set_version_id)
+        # )
+        # self.id2loc = self.location_metadata.set_index('location_id')[
+        #     'location_name'].to_dict()
 
         # read beta regression draws
         for filename in os.listdir(directories.regression_beta_fit_dir):
@@ -178,6 +191,8 @@ class Visualizer:
                                  output_dir="plots",
                                  compartments = ('S', 'E', 'I1', 'I2', 'R', 'beta'),
                                  colors = ('blue', 'orange', 'red', 'purple', 'green', 'blue')):
+        # TODO: comment 2 and uncomment 1 for cluster
+        #group_name = self.id2loc[group]
         group_name = self.metadata[self.metadata['location_id'] == group]['location_name'].to_list()[0]
         fig = plt.figure(figsize=(12, (len(compartments)+1) * 6))
         grid = plt.GridSpec(len(compartments) + 1, 1, wspace=0.1, hspace=0.4)
@@ -210,6 +225,8 @@ class Visualizer:
             'Deaths': OUTPUT_DRAWS_DEATHS,
             'R_effective': OUTPUT_DRAWS_REFF
         }
+        # TODO: comment 2 and uncomment 1 for cluster
+        #group_name = self.id2loc[group]
         group_name = self.metadata[self.metadata['location_id'] == group]['location_name'].to_list()[0]
         fig = plt.figure(figsize=(12, (3) * 6))
         grid = plt.GridSpec(3, 1, wspace=0.1, hspace=0.4)
