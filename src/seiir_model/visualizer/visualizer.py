@@ -204,7 +204,7 @@ class Visualizer:
             draw_num = 0
             while f"draw_{draw_num}" in compartment_data.columns:
                 draw_name = f"draw_{draw_num}"
-                if compartment == "R_effective2":
+                if compartment == "R_effective":
                     ax.semilogy(time, compartment_data[draw_name], linestyle=linestyle, c=color[i], alpha=transparency)
                 else:
                     ax.plot(time, compartment_data[draw_name], linestyle=linestyle, c=color[i], alpha=transparency)
@@ -214,7 +214,7 @@ class Visualizer:
 
         print(f"Final draws plot for {group} {group_name} is done")
 
-        plt.savefig(os.path.join(output_dir, f"final_draws_rlinear_{group_name}.pdf"))
+        plt.savefig(os.path.join(output_dir, f"final_draws_refflog_{group_name}.pdf"))
         plt.close(fig)
 
 if __name__ == "__main__":
