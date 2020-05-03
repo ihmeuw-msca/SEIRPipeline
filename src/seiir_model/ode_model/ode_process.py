@@ -13,8 +13,7 @@ from odeopt.ode import LinearFirstOrder
 from odeopt.core.utils import linear_interpolate
 from .spline_fit import SplineFit
 
-X = 14
-Y = 18
+X = 4
 
 
 class SingleGroupODEProcess:
@@ -23,8 +22,7 @@ class SingleGroupODEProcess:
                  col_cases,
                  col_pop,
                  col_loc_id,
-                 peak_date,
-                 day_shift=4,
+                 lag_days=17,
                  alpha=(0.95,)*2,
                  sigma=(0.2,)*2,
                  gamma1=(0.5,)*2,
@@ -62,23 +60,11 @@ class SingleGroupODEProcess:
         self.col_loc_id = col_loc_id
 
         # subset the data
-        if peak_date is not None:
-            self.peak_date = np.datetime64(peak_date)
-        else:
-            self.peak_date = None
-        self.day_shift = day_shift
+        self.lag_days = lag_days
         df.sort_values(self.col_date, inplace=True)
         date = pd.to_datetime(df[col_date])
-        x = X
-        y = Y + self.day_shift
         self.today = np.datetime64(datetime.today())
-        if self.peak_date is not None:
-            idx = date < max(
-                self.today + np.timedelta64(x - y),
-                self.peak_date + np.timedelta64((x - 4) - y)
-            )
-        else:
-            idx = date < self.today + np.timedelta64(x - y)
+        idx = date < self.today + np.timedelta64(X - self.lag_days)
         idx = idx & df[col_cases] > 0.0
         self.df = df[idx].iloc[1:].copy()
         date = date[idx][1:]
