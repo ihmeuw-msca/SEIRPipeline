@@ -210,7 +210,7 @@ class Visualizer:
             ax.set_title(f"Location {group_name}: {compartment}")
         print(f"Trajectories plot for {group} {group_name} is done")
 
-        plt.savefig(os.path.join(output_dir, f"trajectories_{group_name}.pdf"))
+        plt.savefig(os.path.join(output_dir, f"trajectories_{group_name}.png"))
         plt.close(fig)
 
     def create_final_draws_plot(self,
@@ -252,7 +252,7 @@ class Visualizer:
 
         print(f"Final draws plot for {group} {group_name} is done")
 
-        plt.savefig(os.path.join(output_dir, f"final_draws_refflog_{group_name}.pdf"))
+        plt.savefig(os.path.join(output_dir, f"final_draws_refflog_{group_name}.png"))
         plt.close(fig)
 
 
