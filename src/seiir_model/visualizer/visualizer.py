@@ -253,8 +253,9 @@ class Visualizer:
                     else:
                         ax.plot(time, compartment_data[draw_name], linestyle=linestyle, c=color[i], alpha=transparency)
                     ax.plot([start_date, end_date], [1, 1], linestyle='--', c="black")
-                ax.plot(time, compartment_data[draw_name], linestyle=linestyle,
-                        c=color[i], alpha=transparency)
+                else:
+                    ax.plot(time, compartment_data[draw_name], linestyle=linestyle,
+                            c=color[i], alpha=transparency)
                 draw_num += 1
             self.format_x_axis(ax, start_date=start_date, now_date=now_date, end_date=end_date,
                                major_tick_interval_days=14)
