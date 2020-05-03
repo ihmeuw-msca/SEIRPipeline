@@ -68,21 +68,29 @@ class ModelRunner:
         return cov_temp, cov_testing, cov_pop_density, cov_mobility, cov_intercept
 
     def fit_beta_regression_prod(self, covmodel_set, mr_data, path):
-        cov_temp, cov_testing, cov_pop_density, cov_mobility, cov_intercept = self.covmodels_prod()
-
+        # cov_temp, cov_testing, cov_pop_density, cov_mobility, cov_intercept = self.covmodels_prod()
+        # regressor = BetaRegressorSequential(
+        #     ordered_covmodel_sets=[
+        #         CovModelSet([cov_temp]), 
+        #         CovModelSet([cov_testing, cov_pop_density, cov_mobility, cov_intercept]),
+        #     ],
+        #     std=[1e-7] * 2,
+        # )
+        covmodels = covmodel_set.cov_models
         regressor = BetaRegressorSequential(
             ordered_covmodel_sets=[
-                CovModelSet([cov_temp]), 
-                CovModelSet([cov_testing, cov_pop_density, cov_mobility, cov_intercept]),
+                CovModelSet([covmodels[0]]), 
+                CovModelSet(covmodels[1:]),
             ],
             std=[1e-7] * 2,
         )
+
         regressor.fit(mr_data)
         regressor.save_coef(path)
 
     def predict_beta_forward_prod(self, covmodel_set, df_cov, df_cov_coef, col_t, col_group):
-        cov_temp, cov_testing, cov_pop_density, cov_mobility, cov_intercept = self.covmodels_prod()
-        covmodel_set = CovModelSet([cov_temp, cov_testing, cov_pop_density, cov_mobility, cov_intercept])
+        # cov_temp, cov_testing, cov_pop_density, cov_mobility, cov_intercept = self.covmodels_prod()
+        # covmodel_set = CovModelSet([cov_temp, cov_testing, cov_pop_density, cov_mobility, cov_intercept])
         df = self.predict_beta_forward(covmodel_set, df_cov, df_cov_coef, col_t, col_group, 'ln_beta_pred')
         df['beta_pred'] = np.exp(df['ln_beta_pred'])
         return df
