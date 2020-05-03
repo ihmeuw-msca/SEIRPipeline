@@ -6,7 +6,7 @@ from seiir_model.regression_model.beta_fit import BetaRegressor, BetaRegressorSe
 from seiir_model.ode_forecasting import ODERunner
 
 COL_TEMP = 'temperature'
-COL_TESTING = 'testing'
+COL_TESTING = 'testing_reference'
 COL_POP_DENSITY = 'proportion_over_1k'
 COL_MOBILITY = 'mobility_lift'
 
