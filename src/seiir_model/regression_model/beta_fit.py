@@ -16,6 +16,7 @@ class BetaRegressor:
         self.covmodel_set_fixed = copy.deepcopy(self.covmodel_set)
         for covmodel in self.covmodel_set_fixed.cov_models:
             covmodel.use_re = False 
+            covmodel.gprior = None
 
         self.mr_model_fixed = MRModel(mr_data, self.covmodel_set_fixed)
         self.mr_model_fixed.fit_model()
