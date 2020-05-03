@@ -6,7 +6,7 @@ from matplotlib import pyplot as plt
 import matplotlib.dates as mdates
 
 from seiir_model_pipeline.core.versioner import Directories
-from seiir_model_pipeline.core.versioner import load_regression_settings
+from seiir_model_pipeline.core.versioner import load_regression_settings, load_forecast_settings
 
 ODE_BETA_FIT = "ode_beta_fit"
 COEFFICIENTS_FIT = "coefficients_fit"
@@ -33,6 +33,16 @@ class Visualizer:
             ODE_COMPONENTS_FORECAST: []
         } for group in self.groups}
         self.params_for_draws = []
+
+        # dictionary of location_id to name
+        self.regression_settings = load_regression_settings(directories.regression_version)
+        self.forecast_settings = load_forecast_settings(directories.forecast_version)
+        self.location_metadata = pd.read_csv(
+            self.directories.get_location_metadata_file(
+                self.regression_settings.location_set_version_id)
+        )
+        self.id2loc = self.location_metadata.set_index('location_id')[
+            'location_name'].to_dict()
 
         # read beta regression draws
         for filename in os.listdir(directories.regression_beta_fit_dir):
@@ -148,6 +158,23 @@ class Visualizer:
         #             linestyle=linestyle, c=color, alpha=1, label=compartment
         #             )
 
+    def plot_spline(self):
+        num_locs = len(self.data)
+        fig, ax = plt.subplots(num_locs, 1,
+                               figsize=(8, 4*num_locs))
+        for i, loc_id in enumerate(self.data.keys()):
+            for j in range(self.regression_settings.n_draws):
+                df = self.data[loc_id][ODE_BETA_FIT].sort_values('date')
+                ax[i].scatter(np.arange(df.shape[0]), df['newE_obs'],
+                              marker='.', c='#ADD8E6', alpha=0.7)
+                ax[i].plot(np.arange(df.shape[0]), df['newE'], c='#008080',
+                           alpha=0.5, linewidth=1.0)
+            ax[i].set_xticks(np.arange(df.shape[0])[::5])
+            ax[i].set_xticklabels(df['date'][::5], rotation='vertical')
+            ax[i].set_title()
+
+        plt.savefig(self.directories.regression_diagnostic_dir / 'spline_fit.png',
+                    bbox_inches='tight')
 
 class PlotBetaCoef:
     def __init__(self,
@@ -174,6 +201,7 @@ class PlotBetaCoef:
 
         # organize information
         self.covs = np.sort(list(self.settings.covariates.keys()))
+        self.covs = np.append(self.covs, 'intercept')
         self.loc_ids = np.sort(list(df_coef[0]['group_id'].unique()))
         self.locs = np.array([
             self.id2loc[loc_id]
@@ -255,11 +283,11 @@ class PlotBetaResidual:
 
         # compute RMSE
         self.rmse_data = np.vstack([
-            np.array([self.get_rsme(df, loc_id) for loc_id in self.loc_ids])
+            np.array([self.get_rmse(df, loc_id) for loc_id in self.loc_ids])
             for df in df_beta
         ])
 
-    def get_rsme(self, df, loc_id):
+    def get_rmse(self, df, loc_id):
         beta = df.loc[df.loc_id == loc_id, 'beta'].values
         pred_beta = df.loc[df.loc_id == loc_id, 'beta_pred'].values
 
