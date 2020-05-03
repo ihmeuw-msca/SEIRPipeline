@@ -314,8 +314,7 @@ class ODEProcessInput:
     gamma2: Tuple
     solver_dt: float
     spline_options: Dict
-    peak_date_dict: Dict
-    day_shift: int
+    lag_days: int
 
 
 class ODEProcess:
@@ -339,8 +338,7 @@ class ODEProcess:
         self.gamma2 = input.gamma2
         self.solver_dt = input.solver_dt
         self.spline_options = input.spline_options
-        self.peak_date_dict = input.peak_date_dict
-        self.day_shift = input.day_shift
+        self.lag_days = input.lag_days
 
         # create the location id
         self.loc_ids = np.sort(list(self.df_dict.keys()))
@@ -359,9 +357,7 @@ class ODEProcess:
                 self.col_cases,
                 self.col_pop,
                 self.col_loc_id,
-                self.peak_date_dict[loc_id]
-                if loc_id in self.peak_date_dict else None,
-                day_shift=self.day_shift,
+                lag_days=self.lag_days,
                 alpha=(self.alpha,)*2,
                 sigma=(self.sigma,)*2,
                 gamma1=(self.gamma1,)*2,
