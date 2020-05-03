@@ -71,8 +71,12 @@ class BetaRegressorSequential:
             self.col_covs.insert(0, 'intercept')
         else:
             covmodels = []
+        original_covmodels = copy.deepcopy(covmodels)
         while len(self.ordered_covmodel_sets) > 0:
-            covmodel_set = CovModelSet(covmodels + self.ordered_covmodel_sets.pop(0).cov_models)
+            new_cov_models = self.ordered_covmodel_sets.pop(0).cov_models
+            original_covmodels.extend(copy.deepcopy(new_cov_models))
+            covmodel_set = CovModelSet(covmodels + new_cov_models)
+            
             regressor = BetaRegressor(covmodel_set)
             regressor.fit_no_random(mr_data)
             if verbose:
@@ -83,7 +87,7 @@ class BetaRegressorSequential:
                 covmodel.bounds = np.array([coef, coef])
             covmodels = covmodel_set.cov_models
 
-        self.regressor = BetaRegressor(CovModelSet(covmodels))
+        self.regressor = BetaRegressor(CovModelSet(original_covmodels))
         self.regressor.fit(mr_data)
         self.cov_coef = self.regressor.cov_coef
 
