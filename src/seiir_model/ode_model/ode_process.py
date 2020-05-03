@@ -307,6 +307,7 @@ class ODEProcessInput:
     col_cases: str
     col_pop: str
     col_loc_id: str
+    col_lag_days: str
 
     alpha: Tuple
     sigma: Tuple
@@ -314,7 +315,6 @@ class ODEProcessInput:
     gamma2: Tuple
     solver_dt: float
     spline_options: Dict
-    lag_days: int
 
 
 class ODEProcess:
@@ -331,6 +331,7 @@ class ODEProcess:
         self.col_cases = input.col_cases
         self.col_pop = input.col_pop
         self.col_loc_id = input.col_loc_id
+        self.col_lag_days = input.col_lag_days
 
         self.alpha = input.alpha
         self.sigma = input.sigma
@@ -338,7 +339,6 @@ class ODEProcess:
         self.gamma2 = input.gamma2
         self.solver_dt = input.solver_dt
         self.spline_options = input.spline_options
-        self.lag_days = input.lag_days
 
         # create the location id
         self.loc_ids = np.sort(list(self.df_dict.keys()))
@@ -348,6 +348,10 @@ class ODEProcess:
         self.sigma = np.random.uniform(*self.sigma)
         self.gamma1 = np.random.uniform(*self.gamma1)
         self.gamma2 = np.random.uniform(*self.gamma2)
+
+        # lag days
+        self.lag_days = self.df_dict[self.loc_ids[0]][
+            self.col_lag_days].values[0]
 
         # create model for each location
         self.models = {
