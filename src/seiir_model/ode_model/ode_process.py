@@ -13,7 +13,7 @@ from odeopt.ode import LinearFirstOrder
 from odeopt.core.utils import linear_interpolate
 from .spline_fit import SplineFit
 
-X = 8
+
 
 
 class SingleGroupODEProcess:
@@ -22,6 +22,7 @@ class SingleGroupODEProcess:
                  col_cases,
                  col_pop,
                  col_loc_id,
+                 day_shift=8,
                  lag_days=17,
                  alpha=(0.95,)*2,
                  sigma=(0.2,)*2,
@@ -60,11 +61,13 @@ class SingleGroupODEProcess:
         self.col_loc_id = col_loc_id
 
         # subset the data
+        self.day_shift = day_shift
         self.lag_days = lag_days
         df.sort_values(self.col_date, inplace=True)
         date = pd.to_datetime(df[col_date])
         self.today = np.datetime64(datetime.today())
-        idx = date < self.today + np.timedelta64(X - self.lag_days, 'D')
+        idx = date < self.today + np.timedelta64(self.day_shift -
+                                                 self.lag_days, 'D')
         idx = idx & df[col_cases] > 0.0
         self.df = df[idx].iloc[1:].copy()
         date = date[idx][1:]
@@ -315,6 +318,7 @@ class ODEProcessInput:
     gamma2: Tuple
     solver_dt: float
     spline_options: Dict
+    day_shift: int
 
 
 class ODEProcess:
@@ -339,6 +343,7 @@ class ODEProcess:
         self.gamma2 = input.gamma2
         self.solver_dt = input.solver_dt
         self.spline_options = input.spline_options
+        self.day_shift = input.day_shift
 
         # create the location id
         self.loc_ids = np.sort(list(self.df_dict.keys()))
@@ -361,6 +366,7 @@ class ODEProcess:
                 self.col_cases,
                 self.col_pop,
                 self.col_loc_id,
+                day_shift=self.day_shift,
                 lag_days=self.lag_days,
                 alpha=(self.alpha,)*2,
                 sigma=(self.sigma,)*2,
