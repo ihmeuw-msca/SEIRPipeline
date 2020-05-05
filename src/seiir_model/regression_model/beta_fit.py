@@ -95,7 +95,6 @@ class BetaRegressorSequential:
                 else:
                     covmodel.bounds = np.array([coef, coef])
             covmodels = covmodel_set.cov_models
-
         self.regressor = BetaRegressor(CovModelSet(original_covmodels))
         self.regressor.fit(mr_data)
         self.cov_coef = self.regressor.cov_coef
