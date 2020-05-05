@@ -70,10 +70,7 @@ class ModelRunner:
 
     def fit_beta_regression_prod(self, ordered_covmodel_sets, mr_data, path):
 
-        regressor = BetaRegressorSequential(
-            ordered_covmodel_sets=ordered_covmodel_sets,
-            std=[1.0] * 4,
-        )
+        regressor = BetaRegressorSequential(ordered_covmodel_sets=ordered_covmodel_sets)
         regressor.fit(mr_data)
         regressor.save_coef(path)
 
