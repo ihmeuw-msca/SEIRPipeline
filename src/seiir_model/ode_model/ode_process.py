@@ -68,6 +68,7 @@ class SingleGroupODEProcess:
         self.today = np.datetime64(datetime.today())
         idx = date < self.today + np.timedelta64(self.day_shift -
                                                  self.lag_days, 'D')
+
         start_date = date[df[col_cases] > 0.0].min()
         idx = idx & (date > start_date)
         self.df = df[idx].copy()
