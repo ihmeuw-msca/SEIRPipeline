@@ -57,14 +57,8 @@ class BetaRegressor:
 
 class BetaRegressorSequential:
 
-    def __init__(self, ordered_covmodel_sets, std=None):
-        if std is not None:
-            assert len(ordered_covmodel_sets) == len(std)
-            assert all([s > 0.0 for s in std])
-            self.std = copy.deepcopy(std)
-        else:
-            self.std = [-1.0] * len(ordered_covmodel_sets)
-        
+    def __init__(self, ordered_covmodel_sets, default_std=1.0):
+        self.default_std = default_std        
         self.ordered_covmodel_sets = copy.deepcopy(ordered_covmodel_sets)
         self.col_covs = []
         for covmodel_set in self.ordered_covmodel_sets:
@@ -74,13 +68,13 @@ class BetaRegressorSequential:
         if add_intercept:
             covmodels = [CovModel(col_cov='intercept', use_re=True, re_var=np.inf)]
             self.col_covs.insert(0, 'intercept')
+            input_bounds = {'intercept': None}
         else:
             covmodels = []
+            input_bounds = {}
         
-        original_covmodels = copy.deepcopy(covmodels)
         while len(self.ordered_covmodel_sets) > 0:
             new_cov_models = self.ordered_covmodel_sets.pop(0).cov_models
-            original_covmodels.extend(copy.deepcopy(new_cov_models))
             covmodel_set = CovModelSet(covmodels + new_cov_models)
             
             regressor = BetaRegressor(covmodel_set)
@@ -88,14 +82,19 @@ class BetaRegressorSequential:
             if verbose:
                 print(regressor.cov_coef_fixed)
 
-            std = self.std.pop(0)
             for covmodel, coef in zip(covmodel_set.cov_models[len(covmodels):], regressor.cov_coef_fixed[len(covmodels):]):
-                if std > 0.0:
-                    covmodel.gprior = [coef, std]
+                input_bounds[covmodel.col_cov] = covmodel.bounds
+                covmodel.bounds = np.array([coef, coef])
+                if covmodel.gprior is not None:
+                    covmodel.gprior[0] = coef 
                 else:
-                    covmodel.bounds = np.array([coef, coef])
+                    covmodel.gprior = [coef, self.default_std]
             covmodels = covmodel_set.cov_models
-        self.regressor = BetaRegressor(CovModelSet(original_covmodels))
+        
+        for covmodel in covmodels:
+            covmodel.bounds = input_bounds[covmodel.col_cov]
+
+        self.regressor = BetaRegressor(CovModelSet(covmodels))
         self.regressor.fit(mr_data)
         self.cov_coef = self.regressor.cov_coef
 
