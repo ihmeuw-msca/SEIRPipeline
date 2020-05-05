@@ -49,7 +49,7 @@ class ModelRunner:
         # save other parameters
         self.get_beta_ode_params().to_csv(params_file, index=False)
 
-    def fit_beta_regression(self, ordered_covmodel_sets, mr_data, path, std):
+    def fit_beta_regression(self, ordered_covmodel_sets, mr_data, path, std=None):
         regressor = BetaRegressorSequential(ordered_covmodel_sets, std)
         regressor.fit(mr_data)
         regressor.save_coef(path)
