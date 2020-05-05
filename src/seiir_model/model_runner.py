@@ -68,16 +68,10 @@ class ModelRunner:
         cov_intercept = CovModel(col_cov='intercept', use_re=True, re_var=np.inf)
         return cov_temp, cov_testing, cov_pop_density, cov_mobility, cov_intercept
 
-    def fit_beta_regression_prod(self, covmodel_set, mr_data, path):
-        cov_temp, cov_testing, cov_pop_density, cov_mobility, _ = self.covmodels_prod()
+    def fit_beta_regression_prod(self, ordered_covmodel_sets, mr_data, path):
 
         regressor = BetaRegressorSequential(
-            ordered_covmodel_sets=[
-                CovModelSet([cov_mobility]),
-                CovModelSet([cov_pop_density]),
-                CovModelSet([cov_temp]),
-                CovModelSet([cov_testing]),
-            ],
+            ordered_covmodel_sets=ordered_covmodel_sets,
             std=[1.0] * 4,
         )
         regressor.fit(mr_data)
@@ -85,8 +79,6 @@ class ModelRunner:
 
     def predict_beta_forward_prod(self, covmodel_set, df_cov, df_cov_coef,
                                   col_t, col_group, avg_window=0):
-        cov_temp, cov_testing, cov_pop_density, cov_mobility, cov_intercept = self.covmodels_prod()
-        covmodel_set = CovModelSet([cov_intercept, cov_mobility, cov_pop_density, cov_temp, cov_testing])
         df = self.predict_beta_forward(covmodel_set, df_cov, df_cov_coef, col_t, col_group, 'ln_beta_pred')
         beta_pred = np.exp(df['ln_beta_pred']).values[None, :]
         beta_pred = convolve_mean(beta_pred, radius=[0, avg_window])
