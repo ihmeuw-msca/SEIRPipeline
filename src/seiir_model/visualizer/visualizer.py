@@ -347,7 +347,7 @@ class Visualizer:
     def plot_beta_fitting_process(self, df, group, cov_list, output_dir="."):
         fig = plt.figure(figsize=(12, 6))
         fig.autofmt_xdate()
-        grid = plt.GridSpec(5, 1)
+        grid = plt.GridSpec(1, 1)
         ax_main = fig.add_subplot(grid[0, 0])
         time = pd.to_datetime(df[self.col_date])
         observed_idx = df[self.col_observed] == 1
