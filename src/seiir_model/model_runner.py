@@ -77,10 +77,14 @@ class ModelRunner:
                 covmodels.extend(covmodel_set.cov_models)
             covmodels_set_comb = CovModelSet(covmodels)
             regressor = BetaRegressor(covmodels_set_comb)
-            regressor.load_coef(df_cov_coef)
-            cov_name_to_id = {covmodel.col_cov: i for i, covmodel in enumerate(covmodels_set_comb.cov_models)}
-            for k, vs in regressor.cov_coef.items():
-                covmodels_set_comb.cov_models[cov_name_to_id[k]].gprior = np.array([np.mean(vs), np.std(vs)])
+            coef_values = df_cov_coef[[covmodel.col_cov for covmodel in covmodel_set.cov_models]].to_numpy()
+
+            for i, covmodel in enumerate(covmodels_set_comb.cov_models):
+                if covmodel.use_re:
+                    covmodel.gprior = np.array([np.mean(coef_values[:, i]), np.std(coef_values[:, i])])
+                else:
+                    covmodel.bounds = np.array([np.mean(coef_values[:, i])] * 2)
+            
         
             regressor.fit(mr_data)
             regressor.save_coef(path)
