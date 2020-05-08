@@ -350,8 +350,10 @@ class Visualizer:
         grid = plt.GridSpec(5, 1)
         ax_main = fig.add_subplot(grid[0, 0])
         time = pd.to_datetime(df[self.col_date])
-        true_beta = df["true_beta"].to_numpy()
-        ax_main.scatter(time, true_beta, label="true beta")
+        observed_idx = df[self.col_observed] == 1
+        observed_time = pd.to_datetime(df[observed_idx][self.col_date])
+        true_beta = df[observed_idx]["true_beta"].to_numpy()
+        ax_main.scatter(observed_time, true_beta, label="true beta")
         prev_cov_names = []
         for i, covariate in enumerate(cov_list):
             values = df[covariate]
