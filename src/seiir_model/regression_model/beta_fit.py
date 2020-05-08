@@ -102,6 +102,8 @@ class BetaRegressorSequential:
         self.regressor = BetaRegressor(CovModelSet(covmodels))
         self.regressor.fit(mr_data)
         self.cov_coef = self.regressor.cov_coef
+        if verbose:
+            print(self.cov_coef)
 
     def save_coef(self, path):
         self.regressor.save_coef(path)
