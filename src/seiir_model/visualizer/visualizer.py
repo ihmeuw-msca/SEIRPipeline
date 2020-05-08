@@ -251,7 +251,7 @@ class Visualizer:
         }
         # TODO: comment 2 and uncomment 1 for cluster
         group_name = self.id2loc[group]
-        # group_name = self.metadata[self.metadata['location_id'] == group]['location_name'].to_list()[0]
+        #group_name = self.metadata[self.metadata['location_id'] == group]['location_name'].to_list()[0]
         fig = plt.figure(figsize=(12, (3) * 6))
         grid = plt.GridSpec(3, 1, wspace=0.1, hspace=0.4)
         fig.autofmt_xdate()
@@ -588,3 +588,4 @@ if __name__ == "__main__":
                                          cov_list = covariates,  # list of covariates
                                          output_dir="."  # output directory, should come from Directories object
                                          )
+
