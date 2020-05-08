@@ -68,8 +68,22 @@ class ModelRunner:
         cov_intercept = CovModel(col_cov='intercept', use_re=True, re_var=np.inf)
         return cov_temp, cov_testing, cov_pop_density, cov_mobility, cov_intercept
 
-    def fit_beta_regression_prod(self, ordered_covmodel_sets, mr_data, path, std=1.0):
-        self.fit_beta_regression(ordered_covmodel_sets, mr_data, path, std)
+    def fit_beta_regression_prod(self, ordered_covmodel_sets, mr_data, path, df_cov_coef=None, std=1.0):
+        if df_cov_coef is None:
+            self.fit_beta_regression(ordered_covmodel_sets, mr_data, path, std)
+        else:
+            covmodels = []
+            for covmodel_set in ordered_covmodel_sets:
+                covmodels.extend(covmodel_set.cov_models)
+            covmodels_set_comb = CovModelSet(covmodels)
+            regressor = BetaRegressor(covmodels_set_comb)
+            regressor.load_coef(df_cov_coef)
+            cov_name_to_id = {covmodel.col_cov: i for i, covmodel in enumerate(covmodels_set_comb.cov_models)}
+            for k, vs in regressor.cov_coef.items():
+                covmodels_set_comb.cov_models[cov_name_to_id[k]].gprior = np.array([np.mean(vs), np.std(vs)])
+        
+            regressor.fit(mr_data)
+            regressor.save_coef(path)
 
     def predict_beta_forward_prod(self, covmodel_set, df_cov, df_cov_coef,
                                   col_t, col_group, avg_window=0):
