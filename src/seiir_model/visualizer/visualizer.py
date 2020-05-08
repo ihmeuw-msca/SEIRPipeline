@@ -10,13 +10,14 @@ import matplotlib.patheffects as pe
 
 # TODO: This is my local copy of Directories
 # from seiir_model.visualizer.versioner import Directories
+
 # TODO: Comment above and uncomment these  on cluster
 from seiir_model_pipeline.core.versioner import Directories
 from seiir_model_pipeline.core.versioner import load_regression_settings, load_forecast_settings
 
 ODE_BETA_FIT = "ode_beta_fit"
 COEFFICIENTS_FIT = "coefficients_fit"
-PARAMETERS_FIT = "parameters_fit"
+PARAMETERS_FIT = "param/usr/local/bin/lolcateters_fit"
 ODE_COMPONENTS_FORECAST = "ode_forecast"
 OUTPUT_DRAWS_CASES = "output_draws_cases"
 OUTPUT_DRAWS_DEATHS = "output_draws_deaths"
@@ -27,11 +28,13 @@ class Visualizer:
 
     def __init__(self, directories: Directories,
                  groups: list = None, exclude_groups: list = None,
-                 col_group="loc_id", col_date='date'
+                 col_group="loc_id", col_date='date', col_observed='observed',
+                 covariates=()
                  ):
         self.directories = directories
         self.col_group = col_group
         self.col_date = col_date
+        self.col_observed = col_observed
         self.groups = groups
         if exclude_groups is not None:
             for exclude_group in exclude_groups:
@@ -46,10 +49,11 @@ class Visualizer:
 
         } for group in self.groups}
         self.params_for_draws = []
+        self.covariates = {}
 
         # self.metadata = pd.read_csv("../../../data/covid/metadata-inputs/location_metadata_652.csv")
         # TODO: change it for cluster
-        # self.metadata = pd.read_csv(directories.get_location_metadata_file(location_set_version_id=652))
+        self.metadata = pd.read_csv(directories.get_location_metadata_file(location_set_version_id=652))
 
         # dictionary of location_id to name
         # TODO: uncomment it for cluster to make Peng's part working
@@ -118,6 +122,13 @@ class Visualizer:
                 self.data[group][OUTPUT_DRAWS_REFF] = pd.read_csv(
                     os.path.join(directories.forecast_output_draw_dir, f"reff_{group}.csv"))
 
+        for covariate in covariates:
+            covariate_file = directories.get_covariate_file(covariate)
+            if os.path.exists(covariate_file):
+                self.covariates[covariate] = pd.read_csv(covariate_file)
+            else:
+                raise ValueError(f"Can't find the file for covariate {covariate}: {covariate_file} does not exist.")
+
     def format_x_axis(self, ax, start_date, now_date, end_date,
                       major_tick_interval_days=7, margins_days=5):
 
@@ -142,7 +153,7 @@ class Visualizer:
             now_date = np.datetime64(now_date, 'D')
             ylims = ax.get_ylim()
             ax.plot([now_date, now_date], ylims, linestyle="dashed", c='black')
-            label_level = 0.9*ylims[0] + 0.1*ylims[1]
+            label_level = 0.9 * ylims[0] + 0.1 * ylims[1]
             ax.text(now_date - np.timedelta64(8, 'D'), label_level, "Past")
             ax.text(now_date + np.timedelta64(2, 'D'), label_level, "Future")
 
@@ -203,7 +214,8 @@ class Visualizer:
                                  colors=('blue', 'orange', 'red', 'purple', 'green', 'blue')):
         # TODO: comment 2 and uncomment 1 for cluster
         group_name = self.id2loc[group]
-        # group_name = self.metadata[self.metadata['location_id'] == group]['location_name'].to_list()[0]
+        group_name = self.metadata[self.metadata['location_id'] == group]['location_name'].to_list()[0]
+
         fig = plt.figure(figsize=(12, (len(compartments) + 1) * 6))
         grid = plt.GridSpec(len(compartments) + 1, 1, wspace=0.1, hspace=0.4)
         fig.autofmt_xdate()
@@ -231,7 +243,7 @@ class Visualizer:
                                 linestyle="solid",
                                 transparency=0.1,
                                 color=('orange', 'red', 'blue'),
-                                quantiles = (0.05, 0.95)):
+                                quantiles=(0.05, 0.95)):
         compartment_to_col = {
             'Cases': OUTPUT_DRAWS_CASES,
             'Deaths': OUTPUT_DRAWS_DEATHS,
@@ -239,7 +251,7 @@ class Visualizer:
         }
         # TODO: comment 2 and uncomment 1 for cluster
         group_name = self.id2loc[group]
-        #group_name = self.metadata[self.metadata['location_id'] == group]['location_name'].to_list()[0]
+        # group_name = self.metadata[self.metadata['location_id'] == group]['location_name'].to_list()[0]
         fig = plt.figure(figsize=(12, (3) * 6))
         grid = plt.GridSpec(3, 1, wspace=0.1, hspace=0.4)
         fig.autofmt_xdate()
@@ -250,7 +262,8 @@ class Visualizer:
             time = pd.to_datetime(compartment_data[self.col_date])
             start_date = time.to_list()[0]
             end_date = time.to_list()[-1]
-            now_date = pd.to_datetime(compartment_data[compartment_data['observed'] == 1][self.col_date]).to_list()[-1]
+            now_date = \
+            pd.to_datetime(compartment_data[compartment_data[self.col_observed] == 1][self.col_date]).to_list()[-1]
             draw_num = 0
             draws = []
             while f"draw_{draw_num}" in compartment_data.columns:
@@ -258,7 +271,8 @@ class Visualizer:
                 draws.append(compartment_data[draw_name].to_numpy())
                 if compartment == "R_effective":
                     if R_effective_in_log is True:
-                        ax.semilogy(time, compartment_data[draw_name], linestyle=linestyle, c=color[i], alpha=transparency)
+                        ax.semilogy(time, compartment_data[draw_name], linestyle=linestyle, c=color[i],
+                                    alpha=transparency)
                     else:
                         ax.plot(time, compartment_data[draw_name], linestyle=linestyle, c=color[i], alpha=transparency)
                 else:
@@ -288,6 +302,74 @@ class Visualizer:
         print(f"Final draws plot for {group} {group_name} is done")
 
         plt.savefig(os.path.join(output_dir, f"final_draws_refflog_{group_name}.png"))
+        plt.close(fig)
+
+    def plot_covariates(self, groups=None, covariates=None, base_plot_figsize=(12, 6), output_dir="."):
+        plot_index = 0
+        if covariates is None:
+            covariates = self.covariates.keys()
+
+        for covariate in covariates:
+            data_cov = self.covariates[covariate]
+            if groups is None:
+                groups = data_cov['location_id'].unique()
+            fig = plt.figure(figsize=(base_plot_figsize[0], len(groups) * base_plot_figsize[1]))
+            grid = plt.GridSpec(len(groups), 1, wspace=0.1, hspace=0.4)
+            fig.autofmt_xdate()
+            for i, group in enumerate(groups):
+                # TODO: comment 2 and uncomment 1 for cluster
+                group_name = self.id2loc[group]
+                # group_name = str(group)
+
+                ax = fig.add_subplot(grid[i, 0])
+
+                data = data_cov[data_cov['location_id'] == group]
+                time = pd.to_datetime(data[self.col_date])
+                values = data[covariate]
+                nan_idx = values.isna()
+                total_missing = sum(nan_idx)
+                ax.scatter(time[~nan_idx], values[~nan_idx], c='b', label="data")
+                ax.scatter(time[nan_idx], [0] * total_missing, c='r', label="NaNs")
+                ax.legend()
+
+                start_date = time.to_list()[0]
+                end_date = time.to_list()[-1]
+                now_date = pd.to_datetime(data[data[self.col_observed] == 1][self.col_date]).to_list()[-1]
+                self.format_x_axis(ax, start_date, now_date, end_date, major_tick_interval_days=14)
+                ax.set_ylabel(covariate)
+
+                ax.set_title(f"{group_name}: {covariate} (missing points: {total_missing})")
+
+            plt.savefig(os.path.join(output_dir, f"{covariate}_scatteplot.png"))
+            print(f"Scatter plot for {covariate} is done")
+            plt.close(fig)
+
+    def plot_beta_fitting_process(self, df, group, cov_list, output_dir="."):
+        fig = plt.figure(figsize=(12, 6))
+        fig.autofmt_xdate()
+        grid = plt.GridSpec(5, 1)
+        ax_main = fig.add_subplot(grid[0, 0])
+        time = pd.to_datetime(df[self.col_date])
+        true_beta = df["true_beta"].to_numpy()
+        ax_main.scatter(time, true_beta, label="true beta")
+        prev_cov_names = []
+        for i, covariate in enumerate(cov_list):
+            values = df[covariate]
+            prev_cov_names.append(covariate)
+            ax_main.plot(time, values, label= " + ".join(prev_cov_names))
+
+        ax_main.legend()
+        start_date = time.to_list()[0]
+        end_date = time.to_list()[-1]
+        now_date = pd.to_datetime(df[df[self.col_observed] == 1][self.col_date]).to_list()[-1]
+        self.format_x_axis(ax_main, start_date, now_date, end_date, major_tick_interval_days=14)
+        # TODO: comment 2 and uncomment 1 for cluster
+        group_name = self.id2loc[group]
+        # group_name = group
+        ax_main.set_title(group_name)
+        ax_main.set_ylabel("Beta")
+        plt.savefig(os.path.join(output_dir, f"{group_name}_beta_sequential_fit.png"))
+        print(f"Sequential fit plot for {group_name} is done.")
         plt.close(fig)
 
 
@@ -431,6 +513,7 @@ class PlotBetaResidual:
 if __name__ == "__main__":
     col_date = "date"
     col_group = "loc_id"
+    col_observed = "observed"
     all_groups = [102, 524, 526, 528, 530, 532, 534, 536, 538, 540, 542, 544, 546, 548, 550, 552, 554, 556, 558, 560,
                   562, 564, 566, 568, 570, 572]
     all_groups += [523, 525, 527, 529, 531, 533, 535, 537, 539, 541, 543, 545, 547, 549, 551, 553, 555, 557, 559, 561,
@@ -441,13 +524,67 @@ if __name__ == "__main__":
     version = "2020_05_03.03"
 
     directories = Directories(regression_version=version, forecast_version=version)
-    visualizer = Visualizer(directories, groups=groups, col_date=col_date, col_group=col_group)
 
-    for group in groups:
-       # visualizer.create_trajectories_plot(group=group,
-       #                                      # TODO: change when add plotting dirs to the directories object
-       #                                      # output_dir = directories.get_trajectories_plot_dir
-       #                                      output_dir=".")
-        visualizer.create_final_draws_plot(group=group,
-                                           # TODO: Same
-                                           output_dir=".")
+    # Example of plotting trajectory plots and final draws
+    # visualizer = Visualizer(directories,
+    #                         groups=groups,
+    #                         col_date=col_date,
+    #                         col_group=col_group,
+    #                         col_observed=col_observed,
+    #                         covariates=["mobility_lift", "temperature"])
+
+    # for group in groups:
+    #    visualizer.create_trajectories_plot(group=group,
+    #                                         # TODO: change when add plotting dirs to the directories object
+    #                                         # output_dir = directories.get_trajectories_plot_dir
+    #                                         output_dir=".")
+    #     visualizer.create_final_draws_plot(group=group,
+    #                                        # TODO: Same
+    #                                        output_dir=".")
+    #
+
+    # For Marlena: reading and plotting only covariates:
+    visualizer = Visualizer(directories,
+                            groups=(),  # No groups so it does not read any regression output data
+                            col_date=col_date,
+                            col_group=col_group,
+                            col_observed=col_observed,
+                            covariates=["mobility_lift", "temperature"] # will create separate file for each covariate
+                            )
+
+    visualizer.plot_covariates(groups=groups, # If None (default) then plots all the groups it finds
+                                covariates=None, # If None (default) then plots for all the covariates it read
+                                output_dir=".") # Should come from Directories object
+
+
+    # For Jize: plotting the sequential beta fits and residuals
+    # Example with synthetic data, in real world use t, observed, and true_beta which are provided by the pipeline
+    import datetime
+    days = 100
+    start_date = datetime.datetime(2020, 3, 1)
+    t = np.array([start_date + datetime.timedelta(days=i) for i in range(days)])
+    observed = [1] * (days // 2) + [0] * (days // 2)
+    x = np.arange(0, days, 1) / 100
+    # note that all betas should be for past + future
+    true_beta = 3 * np.exp(-1 * x) + np.random.randn(days) * 0.2    # The true beta (Peng's beta) which we fit
+    covariates = ["mobility_lift", "temperature", "pop_density"]    # covariates which we fit sequentially
+    pred_beta1 = 2 * np.exp(-2 * x)  # predicted beta using only first covariate
+    pred_beta2 = 2.5 * np.exp(-1.5 * x)  # predicted beta using first and second covariate
+    pred_beta3 = 2.9 * np.exp(-1.1 * x)  # predicted beta using first, second, and third covariate
+    # and so on, as many covariates you have
+
+    # Pack all these in a dataframe
+    df = pd.DataFrame(np.array([t, observed, true_beta, pred_beta1, pred_beta2, pred_beta3]).T,
+                      columns=[col_date, col_observed, "true_beta"] + covariates)
+
+    # Create empty visualizer with no groups or covariates, so it does not read any files
+    visualizer = Visualizer(directories,
+                            groups=(),
+                            covariates=(),
+                            )
+
+    visualizer.plot_beta_fitting_process(df,
+                                         group=532,  # group_id of the group you currently fit beta for
+                                         cov_list = covariates,  # list of covariates
+                                         output_dir="."  # output directory, should come from Directories object
+                                         )
