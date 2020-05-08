@@ -24,7 +24,7 @@ class BetaRegressor:
         y = mr_data.df[mr_data.col_obs].to_numpy()
         X = mr_data.df[[covmodel.col_cov for covmodel in self.covmodel_set_fixed.cov_models]].to_numpy()
         s = mr_data.df[mr_data.col_obs_se].to_numpy()
-        coef = np.linalg.solve(np.dot(np.transpose(X)/s**2, X), np.dot(np.transpose(X)/s, y))
+        coef = np.linalg.solve(np.dot(np.transpose(X)/s**2, X), np.dot(np.transpose(X)/s**2, y))
         self.cov_coef_fixed = list(self.mr_model_fixed.result.values())[0]
         if verbose:
             print('by hand', coef)
