@@ -335,7 +335,7 @@ class Visualizer:
                 start_date = time.to_list()[0]
                 end_date = time.to_list()[-1]
                 now_date = pd.to_datetime(data[data[self.col_observed] == 1][self.col_date]).to_list()[-1]
-                self.format_x_axis(ax, start_date, now_date, end_date, major_tick_interval_days=14)
+                self.format_x_axis(ax, start_date, now_date, end_date, major_tick_interval_days=28)
                 ax.set_ylabel(covariate)
 
                 ax.set_title(f"{group_name}: {covariate} (missing points: {total_missing})")
