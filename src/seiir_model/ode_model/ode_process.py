@@ -78,6 +78,10 @@ class SingleGroupODEProcess:
             idx_final = idx & (date >= start_date)
             if cases_threshold < 1e-6:
                 break
+        if np.sum(idx_final) < 2:
+            cases_threshold = 0.0
+            start_date = date[df[col_cases] >= cases_threshold].min()
+            idx_final = idx & (date >= start_date)
         self.df = df[idx_final].copy()
         date = date[idx_final]
 
