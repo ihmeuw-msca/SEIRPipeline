@@ -74,6 +74,8 @@ class SingleGroupODEProcess:
         idx_final = idx & (date >= start_date)
         while not any(idx_final):
             cases_threshold *= 0.5
+            print(f'reduce cases threshold for {self.loc_id} to'
+                  f'{cases_threshold}')
             start_date = date[df[col_cases] >= cases_threshold].min()
             idx_final = idx & (date >= start_date)
             if cases_threshold < 1e-6:
