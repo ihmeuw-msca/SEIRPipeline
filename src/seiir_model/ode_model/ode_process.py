@@ -60,7 +60,7 @@ class SingleGroupODEProcess:
         self.col_pop = col_pop
         self.col_loc_id = col_loc_id
 
-        self.loc_id = self.df[self.col_loc_id].values[0]
+        self.loc_id = df[self.col_loc_id].values[0]
 
         # subset the data
         self.day_shift = day_shift
