@@ -50,11 +50,16 @@ class ModelRunner:
         self.get_beta_ode_params().to_csv(params_file, index=False)
 
     def fit_beta_regression(self, ordered_covmodel_sets, mr_data, path, std=1.0):
+<<<<<<< HEAD
         regressor = BetaRegressorSequential(ordered_covmodel_sets, std)
         regressor.fit(mr_data)
+=======
+        regressor = BetaRegressorSequential(ordered_covmodel_sets, default_std=std)
+        regressor.fit(mr_data, verbose=True)
+>>>>>>> updated beta fit to match with master
         regressor.save_coef(path)
 
-    def predict_beta_forward(self, covmodel_set, df_cov, df_cov_coef, col_t, col_group, col_beta='beta_pred'):
+    def predict_beta_forward(self, covmodel_set, df_cov, df_cov_coef, col_t, col_group, col_beta='ln_beta_pred'):
         regressor = BetaRegressor(covmodel_set)
         regressor.load_coef(df=df_cov_coef)
         return predict(regressor, df_cov, col_t, col_group, col_beta)
@@ -86,8 +91,13 @@ class ModelRunner:
                     covmodel.bounds = np.array([np.mean(coef_values[:, i])] * 2)
             
         
+<<<<<<< HEAD
             regressor.fit(mr_data)
             regressor.save_coef(path)
+=======
+        regressor.fit(mr_data, verbose=True)
+        regressor.save_coef(path)
+>>>>>>> updated beta fit to match with master
 
     def predict_beta_forward_prod(self, covmodel_set, df_cov, df_cov_coef,
                                   col_t, col_group, avg_window=0):

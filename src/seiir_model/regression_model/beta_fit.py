@@ -30,10 +30,13 @@ class BetaRegressor:
             print('by hand', coef)
             print('from slime', self.cov_coef_fixed)
 
-    def fit(self, mr_data):        
+    def fit(self, mr_data, verbose=False):        
         self.mr_model = MRModel(mr_data, self.covmodel_set) 
         self.mr_model.fit_model()
         self.cov_coef = self.mr_model.result
+        if verbose:
+            print(self.cov_coef)
+            print()
 
     def save_coef(self, path):
         df = pd.DataFrame.from_dict(self.cov_coef, orient='index')
@@ -83,7 +86,7 @@ class BetaRegressorSequential:
             covmodel_set = CovModelSet(covmodels + new_cov_models)
             
             regressor = BetaRegressor(covmodel_set)
-            regressor.fit_no_random(mr_data, verbose)
+            regressor.fit_no_random(mr_data, verbose=verbose)
             if verbose:
                 print(regressor.cov_coef_fixed)
 
@@ -104,7 +107,6 @@ class BetaRegressorSequential:
         self.cov_coef = self.regressor.cov_coef
         if verbose:
             print(self.cov_coef)
-            print()
 
     def save_coef(self, path):
         self.regressor.save_coef(path)
