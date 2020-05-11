@@ -337,7 +337,7 @@ class PlotBetaCoef:
 
     def plot_coef(self):
         for cov in self.covs:
-            plt.figure(figsize=(8, 20))
+            plt.figure(figsize=(8, self.coef_data[cov][1].shape[0]//4))
             plt.boxplot(self.coef_data[cov][1], vert=False, showfliers=False,
                         boxprops=dict(linewidth=0.5),
                         whiskerprops=dict(linewidth=0.5))
@@ -409,6 +409,53 @@ class PlotBetaResidual:
                         f'{self.locs[j]}_{loc_id}_residual.png',
                         bbox_inches='tight')
             plt.close('all')
+
+
+class PlotBetaScaling:
+    def __init__(self, directories: Directories):
+        self.directories = directories
+        # load settings
+        self.settings = load_regression_settings(directories.regression_version)
+        self.path_to_location_metadata = self.directories.get_location_metadata_file(
+            self.settings.location_set_version_id)
+        self.path_to_beta_scaling = self.directories.forecast_beta_scaling_dir
+        self.path_to_savefig = self.directories.regression_diagnostic_dir
+
+        # load location metadata
+        self.location_metadata = pd.read_csv(self.path_to_location_metadata)
+        self.id2loc = self.location_metadata.set_index('location_id')[
+            'location_name'].to_dict()
+
+        # load locations
+        self.loc_ids = np.array([
+            file_name.split('_')[0]
+            for file_name in os.listdir(self.path_to_beta_scaling)
+        ]).astype(int)
+        self.locs = np.array([
+            self.id2loc[loc_id]
+            for loc_id in self.loc_ids
+        ])
+
+        # load data
+        self.scales_data = np.vstack([
+            pd.read_csv(self.directories.location_beta_scaling_file(loc_id))[
+                'beta_scales'
+            ].values.ravel()
+            for loc_id in self.loc_ids
+        ])
+
+    def plot_scales(self):
+        plt.figure(figsize=(8, len(self.locs)//4))
+        plt.boxplot(self.scales_data, vert=False, showfliers=False,
+                    boxprops=dict(linewidth=0.5),
+                    whiskerprops=dict(linewidth=0.5))
+        plt.yticks(ticks=np.arange(len(self.locs)) + 1,
+                   labels=self.locs)
+        plt.grid(b=True)
+        plt.box(on=None)
+        plt.title('beta scalings')
+        plt.savefig(self.path_to_savefig/f'beta_scalings_boxplot.pdf',
+                    bbox_inches='tight')
 
 
 if __name__ == "__main__":
