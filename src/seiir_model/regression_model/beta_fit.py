@@ -100,7 +100,8 @@ class BetaRegressorSequential:
             covmodels = covmodel_set.cov_models
         
         for covmodel in covmodels:
-            covmodel.bounds = input_bounds[covmodel.col_cov]
+            if covmodel.use_re:
+                covmodel.bounds = input_bounds[covmodel.col_cov]
 
         self.regressor = BetaRegressor(CovModelSet(covmodels))
         self.regressor.fit(mr_data)
