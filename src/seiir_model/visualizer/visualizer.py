@@ -375,7 +375,7 @@ class PlotBetaResidual:
             'location_name'].to_dict()
 
         # load the beta data
-        df_beta = [
+        self.df_beta = [
             pd.read_csv(self.directories.get_draw_beta_fit_file(i))[[
                 'loc_id',
                 'date',
@@ -387,45 +387,28 @@ class PlotBetaResidual:
         ]
 
         # location information
-        self.loc_ids = np.sort(list(df_beta[0]['loc_id'].unique()))
+        self.loc_ids = np.sort(list(self.df_beta[0]['loc_id'].unique()))
         self.locs = np.array([
             self.id2loc[loc_id]
             for loc_id in self.loc_ids
         ])
         self.num_locs = len(self.locs)
 
-        # compute RMSE
-        self.rmse_data = np.vstack([
-            np.array([self.get_rmse(df, loc_id) for loc_id in self.loc_ids])
-            for df in df_beta
-        ])
-
-    def get_rmse(self, df, loc_id):
-        beta = df.loc[df.loc_id == loc_id, 'beta'].values
-        pred_beta = df.loc[df.loc_id == loc_id, 'beta_pred'].values
-
-        return np.sqrt(np.mean((beta - pred_beta) ** 2))
-
     def plot_residual(self):
-        fig, ax = plt.subplots(self.num_locs, 1, figsize=(8, 4 * self.num_locs))
-        for i, loc in enumerate(self.locs):
-            ax[i].hist(self.rmse_data[:, i])
-            ax[i].set_title(loc)
-        plt.savefig(self.path_to_savefig / f'residual_rmse_histo.pdf',
-                    bbox_inches='tight')
-
-        plt.figure(figsize=(8, 20))
-        sort_idx = np.argsort(self.rmse_data.mean(axis=0))
-        plt.boxplot(self.rmse_data[:, sort_idx], vert=False, showfliers=False,
-                    boxprops=dict(linewidth=0.5),
-                    whiskerprops=dict(linewidth=0.5))
-        plt.grid(b=True)
-        plt.box(on=None)
-        plt.yticks(ticks=np.arange(self.num_locs) + 1,
-                   labels=self.locs[sort_idx])
-        plt.title('Beta Regression Residual RMSE')
-        plt.savefig(self.path_to_savefig / f'residual_rmse_boxplot.pdf',
-                    bbox_inches='tight')
+        for j, loc_id in enumerate(self.loc_ids):
+            plt.figure(figsize=(8, 4))
+            for i in range(self.settings.n_draws):
+                df_sub = self.df_beta[i].loc[self.df_beta[i].loc_id == loc_id]
+                days = df_sub['days']
+                date = df_sub['date']
+                residual = np.log(df_sub['beta']) - np.log(df_sub['beta_pred'])
+                plt.plot(days, residual, color='lightseagreen', alpha=0.5)
+            plt.xticks(days[::10], date[::10])
+            plt.title(f'{loc_id}: beta regression residual')
+            plt.savefig(self.path_to_savefig /
+                        f'{self.locs[j]}_{loc_id}_residual.png',
+                        bbox_inches='tight')
+            plt.close('all')
 
 
 if __name__ == "__main__":
