@@ -79,7 +79,7 @@ class ModelRunner:
                 covmodels.extend(covmodel_set.cov_models)
             covmodels_set_comb = CovModelSet(covmodels)
             regressor = BetaRegressor(covmodels_set_comb)
-            coef_values = df_cov_coef[[covmodel.col_cov for covmodel in covmodels_set_comb.cov_models]].to_numpy()
+            coef_values = df_cov_coef[[covmodel.col_cov for covmodel in covmodels]].to_numpy()
 
             for i, covmodel in enumerate(covmodels_set_comb.cov_models):
                 if covmodel.use_re:
@@ -87,6 +87,7 @@ class ModelRunner:
                 else:
                     covmodel.bounds = np.array([np.mean(coef_values[:, i])] * 2)        
             regressor.fit(mr_data)
+            print(regressor.cov_coef)
             regressor.save_coef(path)
 
     def predict_beta_forward_prod(self, covmodel_set, df_cov, df_cov_coef,
