@@ -60,6 +60,8 @@ class SingleGroupODEProcess:
         self.col_pop = col_pop
         self.col_loc_id = col_loc_id
 
+        self.loc_id = self.df[self.col_loc_id].values[0]
+
         # subset the data
         self.day_shift = day_shift
         self.lag_days = lag_days
@@ -95,7 +97,7 @@ class SingleGroupODEProcess:
         self.date = self.df[self.col_date]
         self.t = self.df[self.col_days].values
         self.obs = self.df[self.col_cases].values
-        self.loc_id = self.df[self.col_loc_id].values[0]
+
 
         # ODE parameters
         assert len(alpha) == 2 and \
