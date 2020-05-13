@@ -78,7 +78,7 @@ class SingleGroupODEProcess:
         self.N = df[self.col_pop].values[0]
 
         assert len(day_shift) == 2 and \
-            0.0 <= day_shift[0] <= day_shift[1]
+            day_shift[0] <= day_shift[1]
 
         # subset the data
         self.day_shift = int(np.random.uniform(*day_shift))
