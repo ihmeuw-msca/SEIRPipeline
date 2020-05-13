@@ -75,7 +75,7 @@ class SingleGroupODEProcess:
         self.sigma = np.random.uniform(*sigma)
         self.gamma1 = np.random.uniform(*gamma1)
         self.gamma2 = np.random.uniform(*gamma2)
-        self.N = self.df[self.col_pop].values[0]
+        self.N = df[self.col_pop].values[0]
         self.init_cond = {
             'S': self.N,
             'E': self.obs[0],
