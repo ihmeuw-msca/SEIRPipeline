@@ -82,10 +82,8 @@ class ModelRunner:
             coef_values = df_cov_coef[[covmodel.col_cov for covmodel in covmodels]].to_numpy()
 
             for i, covmodel in enumerate(covmodels_set_comb.cov_models):
-                if covmodel.use_re:
-                    covmodel.gprior = np.array([np.mean(coef_values[:, i]), np.std(coef_values[:, i])])
-                else:
-                    covmodel.bounds = np.array([np.mean(coef_values[:, i])] * 2)        
+                if not covmodel.use_re:
+                    covmodel.gprior[0] = np.mean(coef_values[:, i])
         
         regressor.fit(mr_data)
         print(regressor.cov_coef)
