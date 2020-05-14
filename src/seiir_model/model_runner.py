@@ -78,7 +78,7 @@ class ModelRunner:
         covmodels_set_comb = CovModelSet(covmodels)
         regressor = BetaRegressor(covmodels_set_comb)
 
-        if df_cov_coef:
+        if df_cov_coef is not None:
             coef_values = df_cov_coef[[covmodel.col_cov for covmodel in covmodels]].to_numpy()
 
             for i, covmodel in enumerate(covmodels_set_comb.cov_models):
