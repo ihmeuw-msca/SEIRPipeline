@@ -115,7 +115,6 @@ class SingleGroupODEProcess:
         self.date = self.df[self.col_date]
         self.t = self.df[self.col_days].values
         self.obs = self.df[self.col_cases].values
-
         self.init_cond = {
             'S': self.N,
             'E': self.obs[0],
