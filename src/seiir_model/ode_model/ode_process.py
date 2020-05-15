@@ -86,8 +86,9 @@ class SingleGroupODEProcess:
         df.sort_values(self.col_date, inplace=True)
         date = pd.to_datetime(df[col_date])
         self.today = np.datetime64(datetime.today())
-        idx = date < self.today + np.timedelta64(self.day_shift -
-                                                 self.lag_days, 'D')
+        end_date = self.today + np.timedelta64(self.day_shift -
+                                               self.lag_days, 'D')
+        idx = date < end_date
 
         cases_threshold = 50.0
         start_date = date[df[col_cases] >= cases_threshold].min()
@@ -104,6 +105,12 @@ class SingleGroupODEProcess:
             cases_threshold = 0.0
             start_date = date[df[col_cases] > cases_threshold].min()
             idx_final = idx & (date > start_date)
+
+        assert np.sum(idx_final) > 2, \
+            f'loc_id: {self.loc_id}, not enough non-zero cases data to fit a ' \
+            f'spline. Number of data between date {start_date} and {end_date}' \
+            f' is {np.sum(idx_final)}.'
+
         self.df = df[idx_final].copy()
         date = date[idx_final]
 
