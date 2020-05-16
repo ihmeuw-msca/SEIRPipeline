@@ -12,24 +12,32 @@ from mrtool import MRBRT
 class SplineFit:
     """Spline fit class
     """
-    def __init__(self, t, y,
+    def __init__(self, t, y, y_se=None,
                  spline_options=None):
         """Constructor of the SplineFit
 
         Args:
             t (np.ndarray): Independent variable.
             y (np.ndarray): Dependent variable.
+            y_se (np.ndarray): Standard error for dependent variable observations
             spline_options (dict | None, optional):
                 Dictionary of spline prior options.
         """
+        assert len(t) == len(y)
         self.t = t
         self.y = y
         self.spline_options = {} if spline_options is None else spline_options
 
+        if y_se is None:
+            self.y_se = 1.0/np.exp(self.y)
+        else:
+            assert len(y_se) == len(y)
+            self.y_se = y_se
+
         # create mrbrt object
         df = pd.DataFrame({
             'y': self.y,
-            'y_se': 1.0/np.exp(self.y),
+            'y_se': self.y_se,
             't': self.t,
             'study_id': 1,
         })
