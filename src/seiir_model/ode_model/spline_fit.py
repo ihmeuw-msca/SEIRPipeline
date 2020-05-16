@@ -23,15 +23,21 @@ class SplineFit:
             spline_options (dict | None, optional):
                 Dictionary of spline prior options.
         """
-        assert len(t) == len(y)
+        if len(t) != len(y):
+            raise ValueError("Independent variable and dependent variable of "
+                             "must be the same length.")
         self.t = t
         self.y = y
         self.spline_options = {} if spline_options is None else spline_options
 
         if y_se is None:
+            # delta method for the log normal variable,
+            # when exponentiate every point share the same standard error.
             self.y_se = 1.0/np.exp(self.y)
         else:
-            assert len(y_se) == len(y)
+            if len(y_se) != len(y):
+                raise ValueError("Observation and observation standard error "
+                                 "should have the same length.")
             self.y_se = y_se
 
         # create mrbrt object
